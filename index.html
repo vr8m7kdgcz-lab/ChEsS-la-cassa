@@ -436,7 +436,7 @@ document.addEventListener("input",e=>{
   else if(t.dataset.sa!=null){st[t.dataset.sl][+t.dataset.sa].imp=t.value}
   else if(t.dataset.si!=null){const k=t.dataset.sl,i=+t.dataset.si;if(t.value==="__new"){newCatFor={k,i};$("nc_"+k).hidden=false;$("ncn_"+k).value="";$("ncn_"+k).focus();t.value=st[k][i].cat;return}st[k][i].cat=t.value}
   else if(t.id==="target"||t.id==="oTarget"){st.target=t.value;$(t.id==="target"?"oTarget":"target").value=t.value}
-  else if(t.id==="date"||t.id==="oDate"){st.date=t.value;$(t.id==="date"?"oDate":"date").value=t.value}
+  else if(t.id==="date"||t.id==="oDate"){if(t.value)switchDate(t.value);return}
   else return;
   save();renderAll();
 });
@@ -681,7 +681,24 @@ async function flush(){
 }
 const e2=v=>Math.round(v)/100;
 const det=o=>Object.entries(o).map(([c,v])=>`${c} ${(v/100).toFixed(2).replace(".",",")}`).join("; ");
-function payload(tipo){const p=payload0(tipo),t=Date.now();st.editedAt=Math.max(st.editedAt||0,0);p.stato=dataOf(st);p.savedAt=t;st.editedAt=t;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}return p}
+function payload(tipo){const p=payload0(tipo),t=Date.now();p.stato=dataOf(st);p.savedAt=t;st.editedAt=t;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
+  const S=snaps();S[st.date]={savedAt:t,stato:p.stato};setSnaps(S);return p}
+const SNAPK="conteggioCassa.giorni";
+const snaps=()=>{try{return JSON.parse(localStorage.getItem(SNAPK))||{}}catch(e){return{}}};
+const setSnaps=S=>{const k=Object.keys(S).sort().reverse();const o={};k.slice(0,120).forEach(d=>o[d]=S[d]);try{localStorage.setItem(SNAPK,JSON.stringify(o))}catch(e){}};
+const fmtD=d=>new Date(d+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"});
+function loadState(stato,savedAt){const keep={view:st.view,w58:st.w58};st=Object.assign(blank(),stato,keep,{editedAt:savedAt});lastHash=JSON.stringify(dataOf(st));try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function switchDate(d){
+  if(d===st.date)return;
+  const S=snaps(),cur=S[st.date];
+  // il conteggio del giorno che lasci resta salvato su questo dispositivo
+  if(st.editedAt&&(!cur||st.editedAt>cur.savedAt))S[st.date]={savedAt:st.editedAt,stato:dataOf(st),bozza:true};
+  setSnaps(S);
+  if(S[d]){loadState(Object.assign({},S[d].stato,{date:d}),S[d].savedAt);refreshInputs();toast("Caricato il conteggio di "+fmtD(d)+(S[d].bozza?" (non ancora salvato nel foglio)":"")+".")}
+  else{const keep={target:st.target,cats:st.cats};loadState(Object.assign(blank(),keep,{date:d}),0);refreshInputs();
+    const h=loadHist().find(e=>e.date===d);
+    toast(h?"Per "+fmtD(d)+" ci sono solo i totali nello storico: il dettaglio di monete e banconote non era stato salvato.":"Nessun conteggio salvato per "+fmtD(d)+": parti da zero.")}
+}
 function payload0(tipo){
   if(tipo==="Apertura"){const o=calcOpen();const pz=[...COINS.map(c=>[lbl(c),+st.oCoins[c]||0]),...NOTES.map(c=>[String(c/100),+st.oNotes[c]||0])].filter(x=>x[1]).map(([d,n])=>`${d}€×${n}`).join("; ");
     return {tipo,data:st.date,valori:{"Fondo atteso":e2(o.target),"Fondo contato":e2(o.tot),"Differenza":e2(o.diff),"Dettaglio":pz}}}
@@ -749,14 +766,16 @@ async function pull(manual){
     (j.righe.Chiusura||[]).forEach(x=>put(x["Data"],{chiusura:true,fondo:c100(x["Fondo cassa"]),contanti:c100(x["Contanti"]),pos:c100(x["Pos"]),totale:c100(x["Totale"])}));
     const nh=Object.values(byD).sort((a,b)=>a.date<b.date?1:-1).slice(0,60);
     try{localStorage.setItem(HKEY,JSON.stringify(nh))}catch(e){}
-    // ultimo salvataggio fatto da qualsiasi dispositivo
-    let msg="Storico aggiornato dal foglio.";
-    if(j.stato&&j.savedAt>(st.editedAt||0)){
-      const keep={view:st.view,w58:st.w58};
-      st=Object.assign(blank(),j.stato,keep,{editedAt:j.savedAt});lastHash=JSON.stringify(dataOf(st));
-      try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
-      msg="Caricato l'ultimo salvataggio ("+new Date(j.savedAt).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+").";
-    }else if(j.stato&&manual)msg="Su questo dispositivo hai già i dati più recenti.";
+    // conteggi completi di ogni giorno, da qualsiasi dispositivo
+    const S=snaps();
+    if(j.stati)for(const[d,v]of Object.entries(j.stati)){if(!S[d]||v.savedAt>S[d].savedAt)S[d]={savedAt:v.savedAt,stato:v.stato}}
+    else if(j.stato&&j.stato.date&&(!S[j.stato.date]||j.savedAt>S[j.stato.date].savedAt))S[j.stato.date]={savedAt:j.savedAt,stato:j.stato};
+    setSnaps(S);
+    let msg="Storico aggiornato dal foglio.";const R=S[st.date];
+    if(R&&!R.bozza&&R.savedAt>(st.editedAt||0)){
+      loadState(Object.assign({},R.stato,{date:st.date}),R.savedAt);
+      msg="Caricato il salvataggio di "+fmtD(st.date)+" ("+new Date(R.savedAt).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+").";
+    }else if(manual&&R)msg="Su questo dispositivo hai già i dati più recenti.";
     refreshInputs();
     if(manual)$("cMsg").textContent=msg;else toast(msg);
   }catch(e){if(manual)$("cMsg").textContent=e instanceof TypeError?"Nessuna connessione a internet.":e.message}
