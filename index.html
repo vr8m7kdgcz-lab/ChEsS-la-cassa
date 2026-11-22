@@ -35,7 +35,7 @@ header.band{background:var(--band);color:var(--bandInk)}
 h1{margin:0;font-size:32px;line-height:1.05}
 .top label{font-size:14px;opacity:.85;display:block}
 .top input{background:#ffffff1f;color:inherit;border:1px solid #ffffff55;border-radius:10px;font:600 18px Barlow,system-ui,sans-serif;padding:8px 10px;height:44px}
-.top input[type=number]{width:120px;text-align:right}
+#target,#oTarget{width:120px;text-align:right}
 .res{max-width:1240px;margin:18px auto 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center}
 .big{font-size:clamp(40px,7vw,64px);line-height:1;font-weight:700;white-space:nowrap}
 .sub{font-size:16px;opacity:.9;margin-top:6px}
@@ -137,7 +137,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
     <div><h1>Apertura turno</h1><div class="small" style="color:inherit;opacity:.8" id="oDateLong"></div></div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       <div><label for="oDate">Data</label><input type="date" id="oDate"></div>
-      <div><label for="oTarget">Fondo cassa atteso (€)</label><input type="number" id="oTarget" inputmode="decimal" step="0.5" min="0"></div>
+      <div><label for="oTarget">Fondo cassa atteso (€)</label><input type="text" id="oTarget" inputmode="decimal" autocomplete="off"></div>
     </div>
   </div>
   <div class="res">
@@ -180,8 +180,8 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
     <div class="card"><h2>Banconote in cassa <span id="aNoteTot"></span></h2>
       <p class="small" style="margin:0 0 6px">Conta tutto quello che c'è nel cassetto, fondo compreso.</p><div id="aNotesBox"></div></div>
     <div class="card"><h2>Pos e spese</h2>
-      <div class="field"><label for="aPos">Pos aperitivo</label><input id="aPos" data-ax="aPos" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
-      <div class="field"><label for="aTav">Tavoli aperti</label><input id="aTav" data-ax="aTav" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
+      <div class="field"><label for="aPos">Pos aperitivo</label><input id="aPos" data-ax="aPos" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+      <div class="field"><label for="aTav">Tavoli aperti</label><input id="aTav" data-ax="aTav" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
       <div data-spblock="aSpeseCassa" data-title="Spese pagate con i soldi della cassa"></div>
       <p class="small" style="margin:6px 0 0">Si sommano all'incasso: sono soldi incassati e poi usati per pagare.</p>
       <div data-spblock="aSpeseExtra" data-title="Spese con soldi extra cassa"></div>
@@ -208,7 +208,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
     <div><h1>Chiusura cassa</h1><div class="small" style="color:inherit;opacity:.8" id="dateLong"></div></div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       <div><label for="date">Data</label><input type="date" id="date"></div>
-      <div><label for="target">Fondo cassa da lasciare (€)</label><input type="number" id="target" inputmode="decimal" step="0.5" min="0"></div>
+      <div><label for="target">Fondo cassa da lasciare (€)</label><input type="text" id="target" inputmode="decimal" autocomplete="off"></div>
     </div>
   </div>
   <div class="res">
@@ -294,7 +294,7 @@ const coinRows=(k,p)=>COINS.map(c=>`<div class="row"><div class="coin ${coinCls[
 const noteRows=(k,p)=>NOTES.map(c=>`<div class="row"><div class="note" style="background:${noteColor[c]}">${c/100} €</div>${stepper(k,c)}<div class="tot" id="${p}${c}"></div></div>`).join("");
 $("coins").innerHTML=coinRows("coins","tc");$("notes").innerHTML=noteRows("notes","tn");
 $("oCoinsBox").innerHTML=coinRows("oCoins","otc");$("oNotesBox").innerHTML=noteRows("oNotes","otn");
-$("extra").innerHTML=EXTRA.map(([k,l])=>`<div class="field"><label for="x${k}">${l}</label><input id="x${k}" data-x="${k}" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${st.extra[k]??""}"></div>`).join("");
+$("extra").innerHTML=EXTRA.map(([k,l])=>`<div class="field"><label for="x${k}">${l}</label><input id="x${k}" data-x="${k}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${st.extra[k]??""}"></div>`).join("");
 
 // Sceglie le banconote per il fondo: si avvicina il più possibile all'importo mancante
 // senza superarlo, evita i 50 se non servono e tiene un mix equilibrato di 5, 10 e 20.
@@ -321,9 +321,9 @@ document.querySelectorAll("[data-spblock]").forEach(el=>{const k=el.dataset.spbl
 <div class="newcat" id="nc_${k}" hidden><input id="ncn_${k}" placeholder="Nome nuova categoria" maxlength="30"><button class="btn pri" data-ncok="${k}">Aggiungi</button><button class="btn" data-ncno="${k}">Annulla</button></div>
 <button class="btn" data-addsp="${k}" style="margin-top:8px">+ Aggiungi spesa</button>`});
 function renderSpese(){
-  SPK.forEach(k=>{const L=st[k];$("list_"+k).innerHTML=L.length?L.map((e,i)=>`<div class="spesa"><select data-sl="${k}" data-si="${i}" aria-label="Categoria spesa">${st.cats.map(c=>`<option${c===e.cat?" selected":""}>${esc(c)}</option>`).join("")}<option value="__new">+ Nuova categoria…</option></select><input data-sl="${k}" data-sa="${i}" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${esc(e.imp??"")}" aria-label="Importo"><button class="del" data-sl="${k}" data-sdel="${i}" aria-label="Elimina spesa">×</button></div>`).join(""):`<p class="small" style="margin:4px 0">Nessuna spesa.</p>`});
+  SPK.forEach(k=>{const L=st[k];$("list_"+k).innerHTML=L.length?L.map((e,i)=>`<div class="spesa"><select data-sl="${k}" data-si="${i}" aria-label="Categoria spesa">${st.cats.map(c=>`<option${c===e.cat?" selected":""}>${esc(c)}</option>`).join("")}<option value="__new">+ Nuova categoria…</option></select><input data-sl="${k}" data-sa="${i}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${esc(e.imp??"")}" aria-label="Importo"><button class="del" data-sl="${k}" data-sdel="${i}" aria-label="Elimina spesa">×</button></div>`).join(""):`<p class="small" style="margin:4px 0">Nessuna spesa.</p>`});
 }
-const toC=v=>Math.round((parseFloat(String(v??"").replace(",","."))||0)*100);
+const toC=v=>{let t=String(v??"").trim().replace(/\s|€/g,"");if(t.includes(","))t=t.replace(/\./g,"").replace(",",".");return Math.round((parseFloat(t)||0)*100)};
 function sumSpese(L){const byCat={};L.forEach(e=>{const v=toC(e.imp);if(v)byCat[e.cat]=(byCat[e.cat]||0)+v});return {byCat,tot:Object.values(byCat).reduce((a,b)=>a+b,0)}}
 function calc(){
   const coinTot=COINS.reduce((s,c)=>s+c*(+st.coins[c]||0),0);
@@ -331,14 +331,14 @@ function calc(){
   const noteCount=NOTES.reduce((s,c)=>s+avail[c],0);
   const unlimited=noteCount===0;
   const lim=unlimited?{500:40,1000:40,2000:40,5000:10}:avail;
-  const target=Math.round((+st.target||0)*100);
+  const target=toC(st.target);
   const M=target-coinTot;
   const pick=M>0?pickFondo(M,lim):{S:0,n:{500:0,1000:0,2000:0,5000:0}};
   const fondoNotes={...pick.n,10000:0};
   const fondo=coinTot+pick.S;
   const incasso={};NOTES.forEach(c=>incasso[c]=unlimited?0:avail[c]-(fondoNotes[c]||0));
   const contanti=NOTES.reduce((s,c)=>s+c*incasso[c],0);
-  const x=k=>Math.round((parseFloat(String(st.extra[k]??"").replace(",","."))||0)*100);
+  const x=k=>toC(st.extra[k]);
   const {byCat,tot:speseTot}=sumSpese(st.spese);
   const ap=calcAp(),apNota=ap.contato?ap.tot:0,se=sumSpese(st.cSpeseExtra);
   const totCassa=contanti+speseTot;
@@ -456,7 +456,7 @@ $("yes").onclick=()=>{const t=st.target,v=st.view,w=st.w58;const cats=st.cats;st
 $("date").value=st.date;$("target").value=st.target;$("oDate").value=st.date;$("oTarget").value=st.target;
 function calcOpen(){
   const coin=COINS.reduce((s,c)=>s+c*(+st.oCoins[c]||0),0),note=NOTES.reduce((s,c)=>s+c*(+st.oNotes[c]||0),0);
-  const target=Math.round((+st.target||0)*100);
+  const target=toC(st.target);
   return {coin,note,tot:coin+note,target,diff:coin+note-target};
 }
 function renderOpen(){
