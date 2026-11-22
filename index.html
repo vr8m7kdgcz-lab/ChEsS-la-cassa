@@ -27,6 +27,8 @@
 --n5:#8a8f96;--n10:#c2414b;--n20:#3a66b5;--n50:#e0812a;--n100:#3e9a5a}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
+html,body,button,input,select,a,label{touch-action:manipulation}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip}
 .num,h1,h2,.big{font-family:"Barlow Semi Condensed",Barlow,sans-serif}
 .band{padding:clamp(18px,3vw,36px) max(4vw,14px)}
@@ -69,6 +71,7 @@ tr.sum td{font-weight:700;font-family:"Barlow Semi Condensed",system-ui,sans-ser
 tr.grand td{font-size:24px;border-top:2px solid var(--ink)}
 .small{color:var(--mute);font-size:14px}
 .ok{color:var(--ok)}.warn{color:var(--warn)}
+.status{color:#1b1d22}.status.ok{color:#1d6b45}.status.warn{color:#a2420b}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
 .btn{font-size:16px;padding:0 16px}
 .btn.pri{background:var(--band);color:#fff;border-color:var(--band)}
@@ -83,7 +86,7 @@ textarea{width:100%;height:160px;font:14px/1.4 monospace;margin-top:10px;border-
 .tabs{display:flex;gap:8px;padding:10px max(4vw,14px) 0;background:var(--band)}
 .tabs button{flex:1;max-width:240px;height:48px;border-radius:12px 12px 0 0;border:1px solid #ffffff44;border-bottom:0;background:transparent;color:#fff;font:600 18px Barlow,system-ui,sans-serif;cursor:pointer}
 .tabs button[aria-current=page]{background:#fff;color:#6e1c28}
-.status{display:inline-block;margin-top:12px;padding:6px 16px;border-radius:999px;background:#fff;font:700 22px "Barlow Semi Condensed",system-ui,sans-serif}
+.status{color:#1b1d22;display:inline-block;margin-top:12px;padding:6px 16px;border-radius:999px;background:#fff;font:700 22px "Barlow Semi Condensed",system-ui,sans-serif}
 .spesa{display:grid;grid-template-columns:minmax(0,1fr) 120px 44px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
 .spesa select,.newcat input{height:44px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:500 16px Barlow,system-ui,sans-serif;padding:0 10px;width:100%}
 .spesa input{height:44px;width:100%;text-align:right;padding:0 10px;font:600 18px Barlow,system-ui,sans-serif;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
@@ -123,6 +126,12 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
 @media(prefers-reduced-motion:reduce){.shake{animation:none}}
 .tabs .tool{flex:0 0 auto;max-width:none;padding:0 14px;font-size:15px;opacity:.85}
 .tabs .sp{flex:1}
+@media(max-width:700px){
+.tabs{flex-wrap:wrap;gap:6px;padding:8px 10px 0}
+.tabs .sp{display:none}
+.tabs .tool{order:-1;flex:0 0 calc(33.333% - 4px);max-width:none;height:38px;border-radius:10px;border-bottom:1px solid #ffffff44;font-size:13px;padding:0 4px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs button[data-view]{flex:0 0 calc(33.333% - 4px);max-width:none;font-size:16px;padding:0 4px;height:46px}
+}
 </style>
 </head>
 <body>
@@ -617,10 +626,24 @@ function doPrint(T,msgId){
   t.style.cssText="";
   let ps=$("pageSize");if(!ps){ps=document.createElement("style");ps.id="pageSize";document.head.appendChild(ps)}
   ps.textContent=`@page{size:${paper}mm ${h}mm;margin:1mm ${(paper-print)/2}mm 0}`;
-  const img=t.querySelector("img");
-  const go=()=>{try{window.print()}catch(e){}setTimeout(()=>{$(msgId).hidden=!IN_CLAUDE},400)};
-  if(img.complete)go();else img.onload=go;
+  // la stampa parte subito, dentro il tocco: alcuni browser la bloccano se arriva dopo
+  printSeen=false;lastT=T;lastMsg=msgId;
+  try{window.print()}catch(e){}
+  if(IN_CLAUDE){$(msgId).hidden=false;return}
+  setTimeout(()=>{if(!printSeen)printFallback(msgId)},2500);
 }
+let printSeen=false,lastT=null,lastMsg=null;
+addEventListener("beforeprint",()=>{printSeen=true});
+addEventListener("afterprint",()=>{printSeen=true});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")printSeen=true});
+function printFallback(msgId){
+  const m=$(msgId);
+  m.innerHTML='La finestra di stampa non si è aperta. Puoi stampare il PDF: tocca <button class="btn pri" type="button" data-pdfprint style="height:40px;margin:6px 0">Stampa via PDF</button><br>e scegli <b>RawBT</b> (Android) oppure <b>Stampa</b> (iPhone/iPad).';
+  m.hidden=false;
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pdfprint]");if(!b||!lastT)return;const n=($("dateLong").textContent||"Conteggio")+".pdf";sharePdf(lastT,"Scontrino "+st.date+".pdf",lastMsg)});
+// logo già pronto, così lo scontrino è completo anche stampando subito
+{const pre=new Image();pre.src=LOGO;if(pre.decode)pre.decode().catch(()=>{});}
 
 const PKEY="conteggioCassa.pin";
 const hashPin=p=>{let h=2166136261;for(const ch of "chesse:"+p){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36)};
