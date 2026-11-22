@@ -540,7 +540,8 @@ addEventListener("hashchange",route);
 $("w58").checked=!!st.w58;
 $("w58").onchange=()=>{st.w58=$("w58").checked;save()};
 $("print").onclick=()=>{
-  const r=calc(),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"],["r","Monete",eur(r.coinTot)]];
+  const r=calc(),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"]];
+  COINS.forEach(c=>{const n=+st.coins[c]||0;if(n)T.push(["r",`${lbl(c)} € × ${n}`,eur(c*n)])});
   FONDO_NOTES.forEach(c=>{if(r.fondoNotes[c])T.push(["r",`${c/100} € × ${r.fondoNotes[c]}`,eur(c*r.fondoNotes[c])])});
   T.push(["b","FONDO CASSA",eur(r.fondo)],["s"]);
   NOTES.forEach(c=>{if(r.incasso[c])T.push(["r",`${c/100} € × ${r.incasso[c]}`,eur(c*r.incasso[c])])});
