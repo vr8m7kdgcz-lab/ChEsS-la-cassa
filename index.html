@@ -37,7 +37,6 @@ header.band{background:var(--band);color:var(--bandInk)}
 h1{margin:0;font-size:32px;line-height:1.05}
 .top label{font-size:14px;opacity:.85;display:block}
 .top input{background:#ffffff1f;color:inherit;border:1px solid #ffffff55;border-radius:10px;font:600 18px Barlow,system-ui,sans-serif;padding:8px 10px;height:44px}
-#target,#oTarget{width:120px;text-align:right}
 .res{max-width:1240px;margin:18px auto 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center}
 .big{font-size:clamp(40px,7vw,64px);line-height:1;font-weight:700;white-space:nowrap}
 .sub{font-size:16px;opacity:.9;margin-top:6px}
@@ -129,7 +128,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
 @media(max-width:700px){
 .tabs{flex-wrap:wrap;gap:6px;padding:8px 10px 0}
 .tabs .sp{display:none}
-.tabs .tool{order:-1;flex:0 0 calc(33.333% - 4px);max-width:none;height:38px;border-radius:10px;border-bottom:1px solid #ffffff44;font-size:13px;padding:0 4px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs .tool{order:-1;flex:0 0 calc(50% - 3px);max-width:none;height:38px;border-radius:10px;border-bottom:1px solid #ffffff44;font-size:13px;padding:0 4px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tabs button[data-view]{flex:0 0 calc(33.333% - 4px);max-width:none;font-size:16px;padding:0 4px;height:46px}
 }
 </style>
@@ -139,14 +138,13 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
 <div class="dots" id="dots"></div><div class="lockmsg" id="lockMsg"></div>
 <div class="pad" id="pad"><button data-pin="1">1</button><button data-pin="2">2</button><button data-pin="3">3</button><button data-pin="4">4</button><button data-pin="5">5</button><button data-pin="6">6</button><button data-pin="7">7</button><button data-pin="8">8</button><button data-pin="9">9</button><button data-pin="del" aria-label="Cancella">⌫</button><button data-pin="0">0</button><button data-pin="ok">OK</button></div>
 <p id="lockCancel" hidden><button class="btn" style="margin-top:14px;background:transparent;color:#fff;border-color:#ffffff66" id="lockBack">Annulla</button></p></div></div>
-<nav class="tabs"><button id="tabA" data-view="apertura">Apertura</button><button id="tabP" data-view="aperitivo">Aperitivo</button><button id="tabC" data-view="chiusura">Chiusura</button><span class="sp"></span><button class="tool" id="cloudBtn">Foglio Google</button><button class="tool" id="lockNow">Blocca</button><button class="tool" id="pinChange">Cambia codice</button></nav>
+<nav class="tabs"><button id="tabA" data-view="apertura">Fondo cassa</button><button id="tabP" data-view="aperitivo">Aperitivo</button><button id="tabC" data-view="chiusura">Chiusura</button><span class="sp"></span><button class="tool" id="lockNow">Blocca</button><button class="tool" id="pinChange">Cambia codice</button></nav>
 <div id="vApertura" hidden>
 <header class="band">
   <div class="top">
-    <div><h1>Apertura turno</h1><div class="small" style="color:inherit;opacity:.8" id="oDateLong"></div></div>
+    <div><h1>Fondo cassa</h1><div class="small" style="color:inherit;opacity:.8" id="oDateLong"></div></div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       <div><label for="oDate">Data</label><input type="date" id="oDate"></div>
-      <div><label for="oTarget">Fondo cassa atteso (€)</label><input type="text" id="oTarget" inputmode="decimal" autocomplete="off"></div>
     </div>
   </div>
   <div class="res">
@@ -157,14 +155,15 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
 <div class="band">
 <main>
   <section>
-    <div class="card"><h2>Monete <span id="oCoinTot"></span></h2><div id="oCoinsBox"></div></div>
-    <div class="card"><h2>Banconote <span id="oNoteTot"></span></h2><div id="oNotesBox"></div></div>
+    <div class="card"><h2>Monete <span id="oCoinTot"></span></h2>
+      <p class="small" style="margin:0 0 6px">Nel fondo ci vanno circa 100 € in monete: contale.</p><div id="oCoinsBox"></div></div>
+    <div class="card"><h2>Banconote del fondo <span id="oNoteTot"></span></h2>
+      <p class="small" style="margin:0 0 6px">Sono sempre le stesse: spunta quelle che ci sono.</p><div id="oFixedBox"></div></div>
   </section>
   <aside>
-    <div class="card"><h2>Esito apertura</h2><table id="oTable"></table>
+    <div class="card"><h2>Esito fondo cassa</h2><table id="oTable"></table>
       <div class="actions" style="margin-top:14px">
-        <button class="btn pri" id="oSave">Salva apertura</button>
-        <button class="btn" id="oPrint">Stampa scontrino</button>
+        <button class="btn pri" id="oPrint">Stampa scontrino</button>
         <button class="btn" id="oShare">Condividi PDF</button>
         <button class="btn" id="oReset">Azzera apertura</button>
       </div>
@@ -200,8 +199,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
   <aside>
     <div class="card"><h2>Riepilogo aperitivo</h2><table id="aTable"></table>
       <div class="actions" style="margin-top:14px">
-        <button class="btn pri" id="aSave">Salva aperitivo</button>
-        <button class="btn" id="aPrint">Stampa scontrino</button>
+        <button class="btn pri" id="aPrint">Stampa scontrino</button>
         <button class="btn" id="aShare">Condividi PDF</button>
         <button class="btn" id="aReset">Azzera aperitivo</button>
       </div>
@@ -217,21 +215,21 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
     <div><h1>Chiusura cassa</h1><div class="small" style="color:inherit;opacity:.8" id="dateLong"></div></div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       <div><label for="date">Data</label><input type="date" id="date"></div>
-      <div><label for="target">Fondo cassa da lasciare (€)</label><input type="text" id="target" inputmode="decimal" autocomplete="off"></div>
     </div>
   </div>
   <div class="res">
     <div><div class="sub" id="resLabel">Mancano al fondo</div><div class="big" id="resBig">–</div><div class="sub" id="resSub"></div></div>
-    <div><div class="sub" style="margin:0 0 8px" id="chipsLabel">Metti nel fondo queste banconote</div><div class="chips" id="chips"></div><div class="msg" id="msg" hidden></div></div>
+    <div><div class="sub" style="margin:0 0 8px" id="chipsLabel">Lascia nel fondo</div><div class="chips" id="chips"></div><div class="msg" id="msg" hidden></div></div>
   </div>
 </header>
 
 <div class="band">
 <main>
   <section>
-    <div class="card"><h2>Monete <span id="coinTot"></span></h2><div id="coins"></div></div>
+    <div class="card"><h2>Monete <span id="coinTot"></span></h2>
+      <p class="small" style="margin:0 0 6px">Conta tutte le monete: nel fondo ne restano 100 €, quelle in più si cambiano con banconote del cassettino di riserva.</p><div id="coins"></div></div>
     <div class="card"><h2>Banconote in cassa <span id="noteTot"></span></h2>
-      <p class="small" style="margin:0 0 6px">Conta tutte le banconote del cassetto: l'app sceglie quali lasciare nel fondo e quali vanno nell'incasso.</p>
+      <p class="small" style="margin:0 0 6px">Conta tutte le banconote del cassetto, comprese quelle del fondo.</p>
       <div id="notes"></div></div>
     <div class="card"><h2>Altri importi</h2><div id="extra"></div>
       <div class="field"><span>Aperitivo <span class="small">(dalla pagina Aperitivo, solo nota)</span></span><b class="tot" id="apAuto">–</b></div>
@@ -245,8 +243,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
       <table id="sumTable"></table>
       <p class="small" id="foot"></p>
       <div class="actions">
-        <button class="btn pri" id="save">Salva nello storico</button>
-        <button class="btn" id="print">Stampa scontrino</button>
+        <button class="btn pri" id="print">Stampa scontrino</button>
         <button class="btn" id="share">Condividi PDF</button>
         <button class="btn" id="copy">Copia riepilogo</button>
         <button class="btn" id="reset">Nuovo conteggio</button>
@@ -256,35 +253,23 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
       <p class="small" id="printMsg" hidden>Da qui la stampa è bloccata: apri il file conteggio-cassa.html in Chrome e premi Stampa da lì.</p>
       <textarea id="copyBox" hidden readonly></textarea>
     </div>
-    <div class="card"><h2>Storico <span class="small" id="histScope">su questo dispositivo</span></h2><div class="hist" id="hist"><p class="small">Nessun conteggio salvato.</p></div></div>
   </aside>
 </main>
 </div>
 
 </div>
-<div id="cloud" class="modal" hidden><div class="card mbox">
-  <h2>Foglio Google</h2>
-  <p class="small" style="margin-top:0">Quando colleghi un foglio Google, ogni "Salva" (apertura, aperitivo e chiusura) manda il conteggio anche al foglio, che i responsabili vedono da qualsiasi dispositivo.</p>
-  <label class="mlabel" for="cUrl">Indirizzo dell'app web (finisce con /exec)</label>
-  <input id="cUrl" class="wide" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
-  <label class="mlabel" for="cKey">Chiave</label>
-  <input id="cKey" class="wide" autocomplete="off" placeholder="la stessa scritta nel codice Apps Script">
-  <div class="actions"><button class="btn pri" id="cTest">Salva e prova</button><button class="btn" id="cSend">Invia ora i conteggi di oggi</button><button class="btn" id="cPull">Aggiorna dal foglio</button><button class="btn" id="cClose">Chiudi</button></div>
-  <p class="small" id="cMsg"></p><p class="small" id="cQueue"></p>
-</div></div>
 <div id="ticket"></div>
 <script>
 {
 const COINS=[50,100,200];               // centesimi
 const NOTES=[500,1000,2000,5000,10000];  // centesimi
-const FONDO_NOTES=[500,1000,2000,5000];  // il 100 non va mai nel fondo
 const EXTRA=[["pos","Pos"],["tavoli","Tavoli aperti"]];
 const DEF_CATS=["Bancone","Cucina","Ghiaccio","Pulizie","Altro"];
-const KEY="conteggioCassa.v1",HKEY="conteggioCassa.storico";
+const KEY="conteggioCassa.v1";
 const $=id=>document.getElementById(id);
 const eur=c=>(c/100).toLocaleString("it-IT",{style:"currency",currency:"EUR"});
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const blank=()=>({date:today(),target:200,coins:{},notes:{},extra:{},oCoins:{},oNotes:{},view:"",spese:[],cats:DEF_CATS.slice(),aCoins:{},aNotes:{},aPos:"",aTav:"",aSpeseCassa:[],aSpeseExtra:[],cSpeseExtra:[]});
+const blank=()=>({date:today(),coins:{},notes:{},extra:{},oCoins:{},oFixed:{},view:"",spese:[],cats:DEF_CATS.slice(),aCoins:{},aNotes:{},aPos:"",aTav:"",aSpeseCassa:[],aSpeseExtra:[],cSpeseExtra:[]});
 let st=blank();
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s)st=Object.assign(blank(),s)}catch(e){}
 {const mig=[["spese","Altro"],["ghiaccio","Ghiaccio"]];for(const[k,c]of mig){if(st.extra[k]){st.spese.push({cat:c,imp:st.extra[k]});delete st.extra[k]}}}
@@ -302,26 +287,9 @@ function stepper(kind,v){
 const coinRows=(k,p)=>COINS.map(c=>`<div class="row"><div class="coin ${coinCls[c]}">${lbl(c)} €</div>${stepper(k,c)}<div class="tot" id="${p}${c}"></div></div>`).join("");
 const noteRows=(k,p)=>NOTES.map(c=>`<div class="row"><div class="note" style="background:${noteColor[c]}">${c/100} €</div>${stepper(k,c)}<div class="tot" id="${p}${c}"></div></div>`).join("");
 $("coins").innerHTML=coinRows("coins","tc");$("notes").innerHTML=noteRows("notes","tn");
-$("oCoinsBox").innerHTML=coinRows("oCoins","otc");$("oNotesBox").innerHTML=noteRows("oNotes","otn");
+$("oCoinsBox").innerHTML=coinRows("oCoins","otc");
+$("oFixedBox").innerHTML=[500,1000,2000].map(c=>{const n={500:4,1000:4,2000:2}[c];return `<label class="row" style="cursor:pointer"><div class="note" style="background:${noteColor[c]}">${c/100} €</div><div style="font:600 18px Barlow,system-ui,sans-serif">× ${n} = ${eur(c*n)}</div><div class="tot" style="display:flex;gap:8px;align-items:center;justify-content:flex-end">Ci sono <input type="checkbox" id="fx${c}" data-fx="${c}" style="width:28px;height:28px"></div></label>`}).join("");
 $("extra").innerHTML=EXTRA.map(([k,l])=>`<div class="field"><label for="x${k}">${l}</label><input id="x${k}" data-x="${k}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${st.extra[k]??""}"></div>`).join("");
-
-// Sceglie le banconote per il fondo: si avvicina il più possibile all'importo mancante
-// senza superarlo, evita i 50 se non servono e tiene un mix equilibrato di 5, 10 e 20.
-function pickFondo(M,avail){
-  let best=null;
-  const a=d=>avail[d];
-  for(let n50=0;n50<=Math.min(a(5000),Math.floor(M/5000));n50++)
-  for(let n20=0;n20<=Math.min(a(2000),Math.floor((M-n50*5000)/2000));n20++)
-  for(let n10=0;n10<=Math.min(a(1000),Math.floor((M-n50*5000-n20*2000)/1000));n10++){
-    const R=M-n50*5000-n20*2000-n10*1000;
-    const n5=Math.min(a(500),Math.floor(R/500));
-    const S=M-R+n5*500;
-    const v5=n5*5,v10=n10*10,v20=n20*20;
-    const score=n50*1e6+(v5-v10)**2+(v10-v20)**2+(v5-v20)**2;
-    if(!best||S>best.S||(S===best.S&&score<best.score))best={S,score,n:{500:n5,1000:n10,2000:n20,5000:n50}};
-  }
-  return best||{S:0,n:{500:0,1000:0,2000:0,5000:0}};
-}
 
 const esc=t=>String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 let newCatFor=null;
@@ -334,95 +302,71 @@ function renderSpese(){
 }
 const toC=v=>{let t=String(v??"").trim().replace(/\s|€/g,"");if(t.includes(","))t=t.replace(/\./g,"").replace(",",".");return Math.round((parseFloat(t)||0)*100)};
 function sumSpese(L){const byCat={};L.forEach(e=>{const v=toC(e.imp);if(v)byCat[e.cat]=(byCat[e.cat]||0)+v});return {byCat,tot:Object.values(byCat).reduce((a,b)=>a+b,0)}}
+const FONDO_COIN=10000,FIXED={500:4,1000:4,2000:2},FIXED_TOT=10000,FONDO_TOT=20000;
+const FIXED_D=[500,1000,2000];
 function calc(){
   const coinTot=COINS.reduce((s,c)=>s+c*(+st.coins[c]||0),0);
   const avail={};NOTES.forEach(c=>avail[c]=Math.max(0,Math.floor(+st.notes[c]||0)));
-  const noteCount=NOTES.reduce((s,c)=>s+avail[c],0);
-  const unlimited=noteCount===0;
-  const lim=unlimited?{500:40,1000:40,2000:40,5000:10}:avail;
-  const target=toC(st.target);
-  const M=target-coinTot;
-  const pick=M>0?pickFondo(M,lim):{S:0,n:{500:0,1000:0,2000:0,5000:0}};
-  const fondoNotes={...pick.n,10000:0};
-  const fondo=coinTot+pick.S;
-  const incasso={};NOTES.forEach(c=>incasso[c]=unlimited?0:avail[c]-(fondoNotes[c]||0));
-  const contanti=NOTES.reduce((s,c)=>s+c*incasso[c],0);
+  const noteTot=NOTES.reduce((s,c)=>s+c*avail[c],0);
+  const counted=coinTot+noteTot;
+  const coinDiff=coinTot-FONDO_COIN;
+  const missingNotes={};FIXED_D.forEach(d=>{const m=FIXED[d]-avail[d];if(m>0)missingNotes[d]=m});
+  const contanti=counted-FONDO_TOT;
   const x=k=>toC(st.extra[k]);
   const {byCat,tot:speseTot}=sumSpese(st.spese);
   const ap=calcAp(),apNota=ap.contato?ap.tot:0,se=sumSpese(st.cSpeseExtra);
   const totCassa=contanti+speseTot;
   const totale=totCassa+x("pos")+x("tavoli");
-  return {coinTot,avail,unlimited,target,M,pick,fondoNotes,fondo,incasso,contanti,x,apNota,apOk:!!ap.contato,se,byCat,speseTot,totCassa,totale,netto:totale-se.tot,gap:target-fondo};
+  return {coinTot,avail,noteTot,counted,coinDiff,missingNotes,contanti,x,apNota,apOk:!!ap.contato,se,byCat,speseTot,totCassa,totale,netto:totale-se.tot};
 }
-
+const fondoChips=()=>`<div class="chip"><span class="coin bi" style="width:32px;height:32px;font-size:11px">€</span><b>100 € monete</b></div>`+FIXED_D.map(c=>`<div class="chip"><span class="note" style="background:${noteColor[c]}">${c/100} €</span><b>× ${FIXED[c]}</b></div>`).join("");
+function coinMsg(diff){
+  if(diff>0)return `Monete: ${eur(diff)} in più rispetto a 100 € → cambiale con banconote del cassettino di riserva.`;
+  if(diff<0)return `Monete: mancano ${eur(-diff)} per arrivare a 100 € → prendile dal cassettino di riserva in cambio di banconote.`;
+  return "Monete: esattamente 100 €.";
+}
 function render(){
   const r=calc();
   COINS.forEach(c=>$("tc"+c).textContent=eur(c*(+st.coins[c]||0)));
   NOTES.forEach(c=>$("tn"+c).textContent=eur(c*r.avail[c]));
   $("coinTot").textContent=eur(r.coinTot);
-  $("noteTot").textContent=eur(NOTES.reduce((s,c)=>s+c*r.avail[c],0));
+  $("noteTot").textContent=eur(r.noteTot);
   const d=new Date(st.date+"T12:00");
   $("dateLong").textContent=isNaN(d)?"":d.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  const msg=$("msg");msg.hidden=true;
-  if(r.M<=0){
-    $("resLabel").textContent=r.M===0?"Fondo completo":"Monete oltre il fondo";
-    $("resBig").textContent=r.M===0?"Perfetto":eur(-r.M);
-    $("resSub").textContent=r.M===0?"Le monete bastano da sole.":"Togli monete per questo importo, oppure alza il fondo.";
-    $("chipsLabel").textContent="Nessuna banconota da mettere nel fondo";$("chips").innerHTML="";
-  }else{
-    $("resLabel").textContent="Mancano al fondo con le sole monete";
-    $("resBig").textContent=eur(r.M);
-    $("resSub").textContent=`Monete ${eur(r.coinTot)} · fondo ${eur(r.target)}`;
-    const ch=FONDO_NOTES.filter(c=>r.fondoNotes[c]>0);
-    $("chipsLabel").textContent=ch.length?"Metti nel fondo queste banconote":"Nessuna banconota adatta";
-    $("chips").innerHTML=ch.map(c=>`<div class="chip"><span class="note" style="background:${noteColor[c]}">${c/100} €</span><b>× ${r.fondoNotes[c]}</b></div>`).join("");
-    if(r.gap>0){msg.hidden=false;msg.textContent=`Con queste arrivi a ${eur(r.fondo)}: restano da coprire ${eur(r.gap)}${r.gap<500?" in monete.":" (mancano banconote piccole in cassa)."}`}
-    else if(r.unlimited){msg.hidden=false;msg.textContent="Suggerimento generico: inserisci le banconote che hai in cassa per una ripartizione precisa e il calcolo dell'incasso."}
-  }
-  const rows=[];
-  rows.push(`<tr><th>Voce</th><th>Pezzi</th><th>Totale</th></tr>`);
-  rows.push(`<tr><td>Monete</td><td></td><td>${eur(r.coinTot)}</td></tr>`);
-  FONDO_NOTES.forEach(c=>{if(r.fondoNotes[c])rows.push(`<tr><td>Fondo · ${c/100} €</td><td>${r.fondoNotes[c]}</td><td>${eur(c*r.fondoNotes[c])}</td></tr>`)});
-  rows.push(`<tr class="sum"><td>Fondo cassa</td><td></td><td class="${r.gap===0?"ok":"warn"}">${eur(r.fondo)}</td></tr>`);
-  NOTES.forEach(c=>{if(r.incasso[c])rows.push(`<tr><td>Incasso · ${c/100} €</td><td>${r.incasso[c]}</td><td>${eur(c*r.incasso[c])}</td></tr>`)});
-  rows.push(`<tr class="sum"><td>Contanti</td><td></td><td>${eur(r.contanti)}</td></tr>`);
+  $("resLabel").textContent="Incasso in contanti";
+  $("resBig").textContent=r.counted?eur(r.contanti):"–";
+  $("resSub").textContent=r.counted?`In cassa ${eur(r.counted)} − fondo ${eur(FONDO_TOT)}`:"Conta monete e banconote: l'app toglie il fondo da 200 €.";
+  $("chipsLabel").textContent="Lascia nel fondo";
+  $("chips").innerHTML=fondoChips();
+  const msg=$("msg"),M=[];
+  if(r.coinTot)M.push(coinMsg(r.coinDiff));
+  const mn=Object.entries(r.missingNotes);
+  if(r.noteTot&&mn.length)M.push("Per il fondo mancano "+mn.map(([c,n])=>`${n} da ${c/100} €`).join(", ")+" → cambiale dal cassettino di riserva.");
+  msg.hidden=!M.length;msg.innerHTML=M.map(esc).join("<br>");
+  const rows=[`<tr><th>Voce</th><th></th><th>Importo</th></tr>`,
+    `<tr><td>Monete</td><td></td><td>${eur(r.coinTot)}</td></tr>`,`<tr><td>Banconote</td><td></td><td>${eur(r.noteTot)}</td></tr>`,
+    `<tr class="sum"><td>Totale in cassa</td><td></td><td>${eur(r.counted)}</td></tr>`,
+    `<tr><td>Fondo cassa (resta)</td><td></td><td class="warn">− ${eur(FONDO_TOT)}</td></tr>`,
+    `<tr class="sum"><td>Contanti</td><td></td><td>${eur(r.contanti)}</td></tr>`];
   Object.entries(r.byCat).forEach(([c,v])=>rows.push(`<tr><td>Spese cassa · ${esc(c)}</td><td></td><td>+ ${eur(v)}</td></tr>`));
   $("tot_spese").textContent=r.speseTot?"+ "+eur(r.speseTot):"";$("tot_cSpeseExtra").textContent=r.se.tot?"− "+eur(r.se.tot):"";
   $("apAuto").textContent=r.apOk?eur(r.apNota):"non ancora contato";
-  rows.push(`<tr class="sum"><td>Totale cassa</td><td></td><td>${eur(r.totCassa)}</td></tr>`);
-  rows.push(`<tr><td>Pos</td><td></td><td>${eur(r.x("pos"))}</td></tr>`);
-  rows.push(`<tr><td>Tavoli aperti</td><td></td><td>${eur(r.x("tavoli"))}</td></tr>`);
-  rows.push(`<tr class="sum grand"><td>Totale</td><td></td><td>${eur(r.totale)}</td></tr>`);
+  rows.push(`<tr class="sum"><td>Totale cassa</td><td></td><td>${eur(r.totCassa)}</td></tr>`,`<tr><td>Pos</td><td></td><td>${eur(r.x("pos"))}</td></tr>`,`<tr><td>Tavoli aperti</td><td></td><td>${eur(r.x("tavoli"))}</td></tr>`,
+    `<tr class="sum grand"><td>Totale</td><td></td><td>${eur(r.totale)}</td></tr>`);
   if(r.se.tot){Object.entries(r.se.byCat).forEach(([c,v])=>rows.push(`<tr><td>Spese extra cassa · ${esc(c)}</td><td></td><td class="warn">− ${eur(v)}</td></tr>`));rows.push(`<tr class="sum"><td>Netto dopo spese extra</td><td></td><td>${eur(r.netto)}</td></tr>`)}
   if(r.apOk)rows.push(`<tr><td>Aperitivo (nota)</td><td></td><td>${eur(r.apNota)}</td></tr>`);
   $("sumTable").innerHTML=rows.join("");
-  $("foot").textContent=(r.apOk?"L'aperitivo è una nota e non entra nel totale. ":"")+"Totale cassa = contanti + spese pagate con la cassa. Totale = totale cassa + Pos + tavoli aperti.";
+  $("foot").textContent=(r.apOk?"L'aperitivo è una nota e non entra nel totale. ":"")+"Contanti = tutto quello che c'è in cassa − fondo da 200 €. Totale cassa = contanti + spese pagate con la cassa. Totale = totale cassa + Pos + tavoli aperti.";
   return r;
 }
 
 function summaryText(r){
-  const L=[`Conteggio cassa ${$("dateLong").textContent}`,"",`Monete: ${eur(r.coinTot)}`];
-  FONDO_NOTES.forEach(c=>{if(r.fondoNotes[c])L.push(`Fondo ${c/100} € × ${r.fondoNotes[c]}`)});
-  L.push(`FONDO CASSA: ${eur(r.fondo)}`,"");
-  NOTES.forEach(c=>{if(r.incasso[c])L.push(`${c/100} € × ${r.incasso[c]} = ${eur(c*r.incasso[c])}`)});
-  L.push(`Contanti: ${eur(r.contanti)}`,`Pos: ${eur(r.x("pos"))}`);
+  const L=[`Chiusura cassa ${$("dateLong").textContent}`,"",`Monete: ${eur(r.coinTot)}`,`Banconote: ${eur(r.noteTot)}`,`Totale in cassa: ${eur(r.counted)}`,`Fondo cassa: −${eur(FONDO_TOT)}`,`Contanti: ${eur(r.contanti)}`];
   Object.entries(r.byCat).forEach(([c,v])=>L.push(`Spese cassa ${c}: +${eur(v)}`));
-  L.push(`Totale cassa: ${eur(r.totCassa)}`,`Tavoli aperti: ${eur(r.x("tavoli"))}`,`TOTALE: ${eur(r.totale)}`);
+  L.push(`Totale cassa: ${eur(r.totCassa)}`,`Pos: ${eur(r.x("pos"))}`,`Tavoli aperti: ${eur(r.x("tavoli"))}`,`TOTALE: ${eur(r.totale)}`);
   if(r.se.tot){Object.entries(r.se.byCat).forEach(([c,v])=>L.push(`Extra cassa ${c}: −${eur(v)}`));L.push(`Netto: ${eur(r.netto)}`)}
-  if(r.apNota)L.push(`Aperitivo: ${eur(r.apNota)}`);
+  if(r.apOk)L.push(`Aperitivo: ${eur(r.apNota)}`);
   return L.join("\n");
-}
-
-function loadHist(){try{return JSON.parse(localStorage.getItem(HKEY))||[]}catch(e){return[]}}
-function putHist(data){
-  const h=loadHist(),old=h.find(e=>e.date===st.date)||{date:st.date};
-  const nh=[Object.assign(old,data),...h.filter(e=>e.date!==st.date)].sort((a,b)=>a.date<b.date?1:-1);
-  try{localStorage.setItem(HKEY,JSON.stringify(nh.slice(0,60)))}catch(_){}
-  renderHist();
-}
-function renderHist(){
-  const h=loadHist();
-  $("hist").innerHTML=h.length?h.map((e,i)=>`<div><span><b>${new Date(e.date+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})}</b> ${e.apertura!=null?` · apertura ${eur(e.apertura)}${e.apertura===e.attesoA?" ✓":" ⚠"}`:""}${e.aperitivo!=null?` · aperitivo ${eur(e.aperitivo)}`:""}${e.chiusura?` · fondo ${eur(e.fondo)} · contanti ${eur(e.contanti)} · pos ${eur(e.pos)}`:""}</span><span><b>${e.chiusura?eur(e.totale):""}</b> <button data-del="${i}" aria-label="elimina">×</button></span></div>`).join(""):`<p class="small">Nessun conteggio salvato.</p>`;
 }
 
 document.addEventListener("click",e=>{
@@ -434,25 +378,19 @@ document.addEventListener("click",e=>{
   const no=e.target.closest("button[data-ncok]");if(no){const k=no.dataset.ncok,n=$("ncn_"+k).value.trim();if(!n)return;if(!st.cats.includes(n))st.cats.push(n);
     if(newCatFor&&st[newCatFor.k][newCatFor.i])st[newCatFor.k][newCatFor.i].cat=n;$("nc_"+k).hidden=true;newCatFor=null;save();renderSpese();renderAll();return}
   const tb=e.target.closest("button[data-view]");if(tb){location.hash=tb.dataset.view;return}
-  const del=e.target.closest("button[data-del]");
-  if(del){const h=loadHist();h.splice(+del.dataset.del,1);try{localStorage.setItem(HKEY,JSON.stringify(h))}catch(_){}renderHist()}
 });
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.k){st[t.dataset.k][t.dataset.v]=Math.max(0,Math.floor(+t.value||0))}
+  else if(t.dataset.fx){st.oFixed[t.dataset.fx]=t.checked}
   else if(t.dataset.x){st.extra[t.dataset.x]=t.value}
   else if(t.dataset.ax){st[t.dataset.ax]=t.value}
   else if(t.dataset.sa!=null){st[t.dataset.sl][+t.dataset.sa].imp=t.value}
   else if(t.dataset.si!=null){const k=t.dataset.sl,i=+t.dataset.si;if(t.value==="__new"){newCatFor={k,i};$("nc_"+k).hidden=false;$("ncn_"+k).value="";$("ncn_"+k).focus();t.value=st[k][i].cat;return}st[k][i].cat=t.value}
-  else if(t.id==="target"||t.id==="oTarget"){st.target=t.value;$(t.id==="target"?"oTarget":"target").value=t.value}
   else if(t.id==="date"||t.id==="oDate"){if(t.value)switchDate(t.value);return}
   else return;
   save();renderAll();
 });
-$("save").onclick=()=>{
-  const r=calc();
-  putHist({fondo:r.fondo,contanti:r.contanti,pos:r.x("pos"),totale:r.totale,chiusura:true});$("save").textContent="Salvato ✓";setTimeout(()=>$("save").textContent="Salva nello storico",1500);
-};
 $("copy").onclick=async()=>{
   const txt=summaryText(calc());
   try{await navigator.clipboard.writeText(txt);$("copy").textContent="Copiato ✓";setTimeout(()=>$("copy").textContent="Copia riepilogo",1500)}
@@ -460,46 +398,50 @@ $("copy").onclick=async()=>{
 };
 $("reset").onclick=()=>{$("confirm").hidden=false};
 $("no").onclick=()=>{$("confirm").hidden=true};
-$("yes").onclick=()=>{const t=st.target,v=st.view,w=st.w58;const cats=st.cats;st=blank();st.target=t;st.view=v;st.w58=w;st.cats=cats;save();renderSpese();
+$("yes").onclick=()=>{const v=st.view,w=st.w58;const cats=st.cats;st=blank();st.view=v;st.w58=w;st.cats=cats;save();renderSpese();
   document.querySelectorAll("input[data-k],input[data-x]").forEach(i=>i.value="");$("aPos").value="";$("aTav").value="";$("date").value=st.date;$("oDate").value=st.date;$("confirm").hidden=true;$("copyBox").hidden=true;renderAll()};
-$("date").value=st.date;$("target").value=st.target;$("oDate").value=st.date;$("oTarget").value=st.target;
+$("date").value=st.date;$("oDate").value=st.date;
 function calcOpen(){
-  const coin=COINS.reduce((s,c)=>s+c*(+st.oCoins[c]||0),0),note=NOTES.reduce((s,c)=>s+c*(+st.oNotes[c]||0),0);
-  const target=toC(st.target);
-  return {coin,note,tot:coin+note,target,diff:coin+note-target};
+  const coin=COINS.reduce((s,c)=>s+c*(+st.oCoins[c]||0),0);
+  const fixed=FIXED_D.reduce((s,c)=>s+(st.oFixed[c]?c*FIXED[c]:0),0);
+  const missing=FIXED_D.filter(c=>!st.oFixed[c]);
+  return {coin,fixed,missing,tot:coin+fixed,coinDiff:coin-FONDO_COIN,diff:coin+fixed-FONDO_TOT,counted:coin>0||fixed>0};
 }
 function renderOpen(){
   const o=calcOpen();
   COINS.forEach(c=>$("otc"+c).textContent=eur(c*(+st.oCoins[c]||0)));
-  NOTES.forEach(c=>$("otn"+c).textContent=eur(c*(+st.oNotes[c]||0)));
-  $("oCoinTot").textContent=eur(o.coin);$("oNoteTot").textContent=eur(o.note);
+  FIXED_D.forEach(c=>{$("fx"+c).checked=!!st.oFixed[c]});
+  $("oCoinTot").textContent=eur(o.coin);$("oNoteTot").textContent=eur(o.fixed)+" / "+eur(FIXED_TOT);
   $("oDateLong").textContent=$("dateLong").textContent;
   $("oBig").textContent=eur(o.tot);
-  const s=$("oStatus");
-  if(o.tot===0){s.textContent="Da contare";s.className="status";$("oMsg").textContent=`Conta monete e banconote che trovi in cassa: l'app controlla che il fondo sia di ${eur(o.target)}.`}
-  else if(o.diff===0){s.textContent="Fondo corretto ✓";s.className="status ok";$("oMsg").textContent="Il fondo lasciato ieri sera è esatto. Buon turno!"}
-  else if(o.diff<0){s.textContent=`Mancano ${eur(-o.diff)}`;s.className="status warn";$("oMsg").textContent=`Il fondo è più basso di ${eur(-o.diff)} rispetto ai ${eur(o.target)} attesi: ricontrolla o segnalalo.`}
-  else{s.textContent=`In più ${eur(o.diff)}`;s.className="status warn";$("oMsg").textContent=`Ci sono ${eur(o.diff)} in più rispetto ai ${eur(o.target)} attesi: ricontrolla o segnalalo.`}
+  const s=$("oStatus"),M=[];
+  if(!o.counted){s.textContent="Da contare";s.className="status";M.push("Conta le monete (circa 100 €) e spunta le banconote del fondo: 4 da 5 €, 4 da 10 €, 2 da 20 €.")}
+  else{
+    if(o.missing.length){s.textContent="Mancano banconote";s.className="status warn";M.push("Non spuntate: "+o.missing.map(c=>`${FIXED[c]} da ${c/100} €`).join(", ")+".")}
+    else{s.textContent="Fondo completo ✓";s.className="status ok"}
+    if(o.coin)M.push(o.coinDiff===0?"Monete: esattamente 100 €.":`Monete: ${eur(o.coin)} (${o.coinDiff>0?"+":"−"}${eur(Math.abs(o.coinDiff))} rispetto a 100 €).`);
+  }
+  $("oMsg").textContent=M.join(" ");
   const rows=[`<tr><th>Voce</th><th>Pezzi</th><th>Totale</th></tr>`];
   COINS.forEach(c=>{const n=+st.oCoins[c]||0;if(n)rows.push(`<tr><td>${lbl(c)} €</td><td>${n}</td><td>${eur(c*n)}</td></tr>`)});
-  NOTES.forEach(c=>{const n=+st.oNotes[c]||0;if(n)rows.push(`<tr><td>${c/100} €</td><td>${n}</td><td>${eur(c*n)}</td></tr>`)});
-  rows.push(`<tr class="sum"><td>Fondo contato</td><td></td><td>${eur(o.tot)}</td></tr>`,`<tr><td>Fondo atteso</td><td></td><td>${eur(o.target)}</td></tr>`,
-    `<tr class="sum grand"><td>Differenza</td><td></td><td class="${o.diff===0?"ok":"warn"}">${o.diff>0?"+":o.diff<0?"−":""}${eur(Math.abs(o.diff))}</td></tr>`);
+  rows.push(`<tr class="sum"><td>Monete</td><td></td><td>${eur(o.coin)}</td></tr>`);
+  FIXED_D.forEach(c=>rows.push(`<tr><td>${c/100} € ${st.oFixed[c]?"✓":"✗"}</td><td>${FIXED[c]}</td><td class="${st.oFixed[c]?"":"warn"}">${eur(st.oFixed[c]?c*FIXED[c]:0)}</td></tr>`));
+  rows.push(`<tr class="sum grand"><td>Fondo cassa</td><td></td><td>${eur(o.tot)}</td></tr>`,`<tr><td>Rispetto a 200 €</td><td></td><td class="${o.diff===0?"ok":"warn"}">${o.diff>0?"+":o.diff<0?"−":""}${eur(Math.abs(o.diff))}</td></tr>`);
   $("oTable").innerHTML=rows.join("");
 }
-$("oSave").onclick=()=>{const o=calcOpen();putHist({apertura:o.tot,attesoA:o.target});$("oSave").textContent="Salvato ✓";setTimeout(()=>$("oSave").textContent="Salva apertura",1500)};
-$("oReset").onclick=()=>{st.oCoins={};st.oNotes={};save();document.querySelectorAll('input[data-k^="o"]').forEach(i=>i.value="");renderOpen()};
+$("oReset").onclick=()=>{st.oCoins={};st.oFixed={};save();document.querySelectorAll('input[data-k^="o"]').forEach(i=>i.value="");renderOpen()};
 $("oPrint").onclick=()=>{
-  const o=calcOpen(),T=[["h","APERTURA TURNO"],["d",$("dateLong").textContent],["s"]];
+  const o=calcOpen(),T=[["h","FONDO CASSA"],["d",$("dateLong").textContent],["s"]];
   COINS.forEach(c=>{const n=+st.oCoins[c]||0;if(n)T.push(["r",`${lbl(c)} € × ${n}`,eur(c*n)])});
-  NOTES.forEach(c=>{const n=+st.oNotes[c]||0;if(n)T.push(["r",`${c/100} € × ${n}`,eur(c*n)])});
-  T.push(["s"],["b","FONDO CONTATO",eur(o.tot)],["r","Fondo atteso",eur(o.target)],["b","DIFFERENZA",(o.diff>0?"+":o.diff<0?"−":"")+eur(Math.abs(o.diff))]);
+  T.push(["b","Monete",eur(o.coin)]);
+  FIXED_D.forEach(c=>T.push(["r",`${c/100} € × ${FIXED[c]} ${st.oFixed[c]?"✓":"MANCA"}`,eur(st.oFixed[c]?c*FIXED[c]:0)]));
+  T.push(["s"],["b","FONDO CASSA",eur(o.tot)],["r","Rispetto a 200 €",(o.diff>0?"+":o.diff<0?"−":"")+eur(Math.abs(o.diff))]);
   doPrint(T,"oPrintMsg");
 };
 $("aCoinsBox").innerHTML=coinRows("aCoins","atc");$("aNotesBox").innerHTML=noteRows("aNotes","atn");$("aPos").value=st.aPos||"";$("aTav").value=st.aTav||"";
 function calcAp(){
   const coin=COINS.reduce((s,c)=>s+c*(+st.aCoins[c]||0),0),note=NOTES.reduce((s,c)=>s+c*(+st.aNotes[c]||0),0),contato=coin+note;
-  const o=calcOpen(),fromOpen=o.tot>0,base=fromOpen?o.tot:o.target;
+  const o=calcOpen(),fromOpen=o.counted,base=fromOpen?o.tot:FONDO_TOT;
   const sc=sumSpese(st.aSpeseCassa),se=sumSpese(st.aSpeseExtra),pos=toC(st.aPos),tav=toC(st.aTav);
   const contanti=contato-base+sc.tot,tot=contanti+pos+tav;
   return {coin,note,contato,fromOpen,base,sc,se,pos,tav,contanti,tot,netto:tot-se.tot};
@@ -525,7 +467,6 @@ function renderAp(){
   $("aTable").innerHTML=rows.join("");
 }
 function renderAll(){render();renderOpen();renderAp()}
-$("aSave").onclick=()=>{const a=calcAp();putHist({aperitivo:a.tot});$("aSave").textContent="Salvato ✓";setTimeout(()=>$("aSave").textContent="Salva aperitivo",1500)};
 $("aReset").onclick=()=>{st.aCoins={};st.aNotes={};st.aPos="";st.aTav="";st.aSpeseCassa=[];st.aSpeseExtra=[];save();document.querySelectorAll('input[data-k^="a"]').forEach(i=>i.value="");$("aPos").value="";$("aTav").value="";renderSpese();renderAll()};
 $("aPrint").onclick=()=>{
   const a=calcAp(),sg=v=>(v<0?"−":"")+eur(Math.abs(v));
@@ -551,10 +492,9 @@ $("w58").onchange=()=>{st.w58=$("w58").checked;save()};
 $("print").onclick=()=>{
   const r=calc(),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"]];
   COINS.forEach(c=>{const n=+st.coins[c]||0;if(n)T.push(["r",`${lbl(c)} € × ${n}`,eur(c*n)])});
-  FONDO_NOTES.forEach(c=>{if(r.fondoNotes[c])T.push(["r",`${c/100} € × ${r.fondoNotes[c]}`,eur(c*r.fondoNotes[c])])});
-  T.push(["b","FONDO CASSA",eur(r.fondo)],["s"]);
-  NOTES.forEach(c=>{if(r.incasso[c])T.push(["r",`${c/100} € × ${r.incasso[c]}`,eur(c*r.incasso[c])])});
-  T.push(["b","Contanti",eur(r.contanti)]);
+  NOTES.forEach(c=>{const n=r.avail[c];if(n)T.push(["r",`${c/100} € × ${n}`,eur(c*n)])});
+  T.push(["b","In cassa",eur(r.counted)],["r","Fondo cassa (resta)","−"+eur(FONDO_TOT)],["b","Contanti",eur(r.contanti)]);
+  if(r.coinTot&&r.coinDiff)T.push(["r",r.coinDiff>0?"Monete da cambiare":"Monete da riserva",eur(Math.abs(r.coinDiff))]);
   Object.entries(r.byCat).forEach(([c,v])=>T.push(["r","Spese cassa "+c,"+"+eur(v)]));
   if(r.speseTot)T.push(["b","Totale cassa",eur(r.totCassa)]);
   T.push(["r","Pos",eur(r.x("pos"))]);
@@ -680,33 +620,6 @@ $("pad").onclick=e=>{const b=e.target.closest("button[data-pin]");if(b)key(b.dat
 addEventListener("keydown",e=>{if($("lock").hidden)return;if(/^[0-9]$/.test(e.key))key(e.key);else if(e.key==="Backspace")key("del");else if(e.key==="Enter")key("ok")});
 $("lockBack").onclick=hideLock;
 
-const CKEY="conteggioCassa.cloud",QKEY="conteggioCassa.coda";
-const cloud=()=>{try{return JSON.parse(localStorage.getItem(CKEY))||{}}catch(e){return{}}};
-const queue=()=>{try{return JSON.parse(localStorage.getItem(QKEY))||[]}catch(e){return[]}};
-const setQueue=q=>{try{localStorage.setItem(QKEY,JSON.stringify(q))}catch(e){}updQ()};
-function updQ(){$("histScope").textContent=cloud().url?"da tutti i dispositivi":"su questo dispositivo";const n=queue().length;$("cQueue").textContent=n?`${n} conteggi in attesa di invio: partiranno al prossimo salvataggio con internet.`:"";$("cloudBtn").textContent=n?`Foglio Google (${n})`:"Foglio Google"}
-async function post(payload,url,key){
-  const body=JSON.stringify({...payload,chiave:key});
-  let r;
-  try{r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body,redirect:"follow"})}
-  catch(e){await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body});return "sent"}
-  let j;try{j=await r.json()}catch(e){throw new Error("Risposta non valida: controlla l'indirizzo e che l'accesso sia 'Chiunque'")}
-  if(!j.ok)throw new Error(j.errore||"Errore");
-  return "ok";
-}
-let flushing=null;
-async function flush(){
-  const c=cloud();if(!c.url)return "nocfg";
-  if(flushing)return flushing;
-  flushing=(async()=>{let res="ok";const left=[];
-    for(const it of queue()){try{const r=await post(it,c.url,c.key);if(r==="sent"&&res==="ok")res="sent"}catch(e){left.push(it);res=navigator.onLine===false||e instanceof TypeError?"offline":"err:"+e.message}}
-    setQueue(left);return res})();
-  try{return await flushing}finally{flushing=null}
-}
-const e2=v=>Math.round(v)/100;
-const det=o=>Object.entries(o).map(([c,v])=>`${c} ${(v/100).toFixed(2).replace(".",",")}`).join("; ");
-function payload(tipo){const p=payload0(tipo),t=Date.now();p.stato=dataOf(st);p.savedAt=t;st.editedAt=t;try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
-  const S=snaps();S[st.date]={savedAt:t,stato:p.stato};setSnaps(S);return p}
 const SNAPK="conteggioCassa.giorni";
 const snaps=()=>{try{return JSON.parse(localStorage.getItem(SNAPK))||{}}catch(e){return{}}};
 const setSnaps=S=>{const k=Object.keys(S).sort().reverse();const o={};k.slice(0,120).forEach(d=>o[d]=S[d]);try{localStorage.setItem(SNAPK,JSON.stringify(o))}catch(e){}};
@@ -718,102 +631,22 @@ function switchDate(d){
   // il conteggio del giorno che lasci resta salvato su questo dispositivo
   if(st.editedAt&&(!cur||st.editedAt>cur.savedAt))S[st.date]={savedAt:st.editedAt,stato:dataOf(st),bozza:true};
   setSnaps(S);
-  if(S[d]){loadState(Object.assign({},S[d].stato,{date:d}),S[d].savedAt);refreshInputs();toast("Caricato il conteggio di "+fmtD(d)+(S[d].bozza?" (non ancora salvato nel foglio)":"")+".")}
-  else{const keep={target:st.target,cats:st.cats};loadState(Object.assign(blank(),keep,{date:d}),0);refreshInputs();
-    const h=loadHist().find(e=>e.date===d);
-    toast(h?"Per "+fmtD(d)+" ci sono solo i totali nello storico: il dettaglio di monete e banconote non era stato salvato.":"Nessun conteggio salvato per "+fmtD(d)+": parti da zero.")}
+  if(S[d]){loadState(Object.assign({},S[d].stato,{date:d}),S[d].savedAt);refreshInputs();toast("Caricato il conteggio di "+fmtD(d)+".")}
+  else{loadState(Object.assign(blank(),{cats:st.cats,date:d}),0);refreshInputs();toast("Nessun conteggio per "+fmtD(d)+": parti da zero.")}
 }
-function payload0(tipo){
-  if(tipo==="Apertura"){const o=calcOpen();const pz=[...COINS.map(c=>[lbl(c),+st.oCoins[c]||0]),...NOTES.map(c=>[String(c/100),+st.oNotes[c]||0])].filter(x=>x[1]).map(([d,n])=>`${d}€×${n}`).join("; ");
-    return {tipo,data:st.date,valori:{"Fondo atteso":e2(o.target),"Fondo contato":e2(o.tot),"Differenza":e2(o.diff),"Dettaglio":pz}}}
-  if(tipo==="Aperitivo"){const a=calcAp();return {tipo,data:st.date,valori:{"Contato in cassa":e2(a.contato),"Fondo tolto":e2(a.base),"Spese cassa":e2(a.sc.tot),"Dettaglio spese cassa":det(a.sc.byCat),
-    "Contanti":e2(a.contanti),"Pos":e2(a.pos),"Tavoli aperti":e2(a.tav),"Totale aperitivo":e2(a.tot),"Spese extra cassa":e2(a.se.tot),"Dettaglio spese extra":det(a.se.byCat),"Netto":e2(a.netto)}}}
-  const r=calc();return {tipo,data:st.date,valori:{"Fondo cassa":e2(r.fondo),"Contanti":e2(r.contanti),"Spese":e2(r.speseTot),"Dettaglio spese":det(r.byCat),"Totale cassa":e2(r.totCassa),
-    "Pos":e2(r.x("pos")),"Tavoli aperti":e2(r.x("tavoli")),"Totale":e2(r.totale),"Aperitivo (nota)":r.apOk?e2(r.apNota):""}};
-}
-async function saveAndSend(btn,label,tipo,localSave){
-  localSave();
-  if(!cloud().url){btn.textContent="Salvato ✓";setTimeout(()=>btn.textContent=label,1500);return}
-  const it=payload(tipo);setQueue([...queue().filter(i=>!(i.tipo===it.tipo&&i.data===it.data)),it]);
-  btn.textContent="Invio al foglio…";btn.disabled=true;
-  const r=await flush();btn.disabled=false;
-  btn.textContent=r==="ok"||r==="sent"?"Salvato ✓ e inviato":r==="offline"?"Salvato · invio appena c'è internet":"Salvato · errore foglio";
-  if(r.startsWith("err:")){$("cMsg").textContent=r.slice(4)}
-  setTimeout(()=>btn.textContent=label,3000);
-}
-$("save").onclick=()=>saveAndSend($("save"),"Salva nello storico","Chiusura",()=>{const r=calc();putHist({fondo:r.fondo,contanti:r.contanti,pos:r.x("pos"),totale:r.totale,chiusura:true})});
-$("oSave").onclick=()=>saveAndSend($("oSave"),"Salva apertura","Apertura",()=>{const o=calcOpen();putHist({apertura:o.tot,attesoA:o.target})});
-$("aSave").onclick=()=>saveAndSend($("aSave"),"Salva aperitivo","Aperitivo",()=>{const a=calcAp();putHist({aperitivo:a.tot})});
-$("cloudBtn").onclick=()=>{const c=cloud();$("cUrl").value=c.url||window.AUTO_URL||"";$("cKey").value=c.key||"";$("cMsg").textContent=c.url?"Collegato.":"Non collegato.";updQ();$("cloud").hidden=false};
-$("cClose").onclick=()=>{$("cloud").hidden=true};
-$("cTest").onclick=async()=>{
-  const url=$("cUrl").value.trim(),key=$("cKey").value.trim();
-  if(!url){try{localStorage.removeItem(CKEY)}catch(e){}$("cMsg").textContent="Collegamento rimosso: i conteggi restano solo su questo tablet.";return}
-  if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)){$("cMsg").textContent="L'indirizzo deve iniziare con https://script.google.com/ e finire con /exec.";return}
-  $("cMsg").textContent="Provo il collegamento…";
-  try{const r=await post({tipo:"test",data:st.date},url,key);
-    try{localStorage.setItem(CKEY,JSON.stringify({url,key}))}catch(e){}
-    $("cMsg").textContent=r==="ok"?"Collegamento riuscito ✓":"Collegamento salvato. Il tablet non riesce a leggere la risposta di Google: controlla nel foglio che arrivino i conteggi dopo il primo Salva.";
-    await flush();pull(false);
-  }catch(e){$("cMsg").textContent=(e instanceof TypeError?"Nessuna connessione a internet.":e.message==="Chiave non valida"?"Chiave sbagliata: deve essere uguale a quella nel codice Apps Script.":e.message)}
-};
-$("cSend").onclick=async()=>{
-  if(!cloud().url){$("cMsg").textContent="Prima collega il foglio con \"Salva e prova\".";return}
-  const its=[];const o=calcOpen(),a=calcAp(),r=calc();
-  if(o.tot)its.push(payload("Apertura"));if(a.contato)its.push(payload("Aperitivo"));if(r.coinTot||r.contanti)its.push(payload("Chiusura"));
-  if(!its.length){$("cMsg").textContent="Non c'è ancora nessun conteggio da inviare.";return}
-  setQueue([...queue().filter(i=>!its.some(x=>x.tipo===i.tipo&&x.data===i.data)),...its]);
-  $("cMsg").textContent="Invio…";const res=await flush();
-  $("cMsg").textContent=res==="ok"||res==="sent"?`Inviati ${its.length} conteggi ✓`:res==="offline"?"Nessuna connessione: li invio più tardi.":res.slice(4);
-};
-addEventListener("online",()=>flush());
-updQ();setTimeout(()=>{if(queue().length)flush()},1500);
 function refreshInputs(){
   document.querySelectorAll("input[data-k]").forEach(i=>i.value=st[i.dataset.k]?.[i.dataset.v]||"");
   document.querySelectorAll("input[data-x]").forEach(i=>i.value=st.extra[i.dataset.x]??"");
-  $("date").value=$("oDate").value=st.date;$("target").value=$("oTarget").value=st.target;
+  $("date").value=$("oDate").value=st.date;
   $("aPos").value=st.aPos||"";$("aTav").value=st.aTav||"";
-  renderSpese();renderAll();renderHist();
-}
-let syncing=false;
-async function pull(manual){
-  const c=cloud();if(!c.url||syncing)return;syncing=true;
-  try{
-    const r=await fetch(c.url+"?azione=dati&chiave="+encodeURIComponent(c.key||"")+"&t="+Date.now());
-    const j=await r.json();if(!j.ok)throw new Error(j.errore||"Errore");
-    // storico da tutti i dispositivi
-    const h=loadHist(),byD={};h.forEach(e=>byD[e.date]=e);
-    const put=(d,o)=>{if(!d)return;byD[d]=Object.assign(byD[d]||{date:d},o)};
-    const c100=v=>Math.round((+v||0)*100);
-    (j.righe.Apertura||[]).forEach(x=>put(x["Data"],{apertura:c100(x["Fondo contato"]),attesoA:c100(x["Fondo atteso"])}));
-    (j.righe.Aperitivo||[]).forEach(x=>put(x["Data"],{aperitivo:c100(x["Totale aperitivo"])}));
-    (j.righe.Chiusura||[]).forEach(x=>put(x["Data"],{chiusura:true,fondo:c100(x["Fondo cassa"]),contanti:c100(x["Contanti"]),pos:c100(x["Pos"]),totale:c100(x["Totale"])}));
-    const nh=Object.values(byD).sort((a,b)=>a.date<b.date?1:-1).slice(0,60);
-    try{localStorage.setItem(HKEY,JSON.stringify(nh))}catch(e){}
-    // conteggi completi di ogni giorno, da qualsiasi dispositivo
-    const S=snaps();
-    if(j.stati)for(const[d,v]of Object.entries(j.stati)){if(!S[d]||v.savedAt>S[d].savedAt)S[d]={savedAt:v.savedAt,stato:v.stato}}
-    else if(j.stato&&j.stato.date&&(!S[j.stato.date]||j.savedAt>S[j.stato.date].savedAt))S[j.stato.date]={savedAt:j.savedAt,stato:j.stato};
-    setSnaps(S);
-    let msg="Storico aggiornato dal foglio.";const R=S[st.date];
-    if(R&&!R.bozza&&R.savedAt>(st.editedAt||0)){
-      loadState(Object.assign({},R.stato,{date:st.date}),R.savedAt);
-      msg="Caricato il salvataggio di "+fmtD(st.date)+" ("+new Date(R.savedAt).toLocaleString("it-IT",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+").";
-    }else if(manual&&R)msg="Su questo dispositivo hai già i dati più recenti.";
-    refreshInputs();
-    if(manual)$("cMsg").textContent=msg;else toast(msg);
-  }catch(e){if(manual)$("cMsg").textContent=e instanceof TypeError?"Nessuna connessione a internet.":e.message}
-  finally{syncing=false}
+  renderSpese();renderAll();
 }
 function toast(m){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.style.cssText="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1b1d22;color:#fff;padding:12px 18px;border-radius:12px;font:500 15px Barlow,system-ui,sans-serif;z-index:45;box-shadow:0 4px 16px #0005;max-width:90vw;text-align:center";document.body.appendChild(t)}t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,3500)}
-$("cPull").onclick=()=>pull(true);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pull(false)});
-setTimeout(()=>pull(false),300);
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude|googleusercontent/.test(location.hostname))navigator.serviceWorker.register("sw.js").catch(()=>{});
 $("lockNow").onclick=()=>showLock(getPin()?"unlock":"new");
 $("pinChange").onclick=()=>showLock(getPin()?"old":"new");
 showLock(getPin()?"unlock":"new");
-renderSpese();renderAll();renderHist();route();
+renderSpese();renderAll();route();
 }
 </script>
 </body>
