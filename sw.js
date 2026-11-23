@@ -1,5 +1,5 @@
 // Service worker: l'app funziona anche senza internet e si aggiorna da sola quando c'è rete
-const CACHE = "cassa-v11";
+const CACHE = "cassa-v12";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {

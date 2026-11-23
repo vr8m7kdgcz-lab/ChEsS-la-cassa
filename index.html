@@ -250,6 +250,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
       </div>
       <div id="confirm" hidden style="margin-top:10px" class="small">Azzero tutti i numeri? <button class="btn" id="yes">Sì, azzera</button> <button class="btn" id="no">Annulla</button></div>
       <label class="check"><input type="checkbox" id="w58"> Carta da 58 mm (altrimenti 80 mm)</label>
+      <label class="check"><input type="checkbox" id="pdfPrint"> Stampa tramite PDF con RawBT (consuma meno carta)</label>
       <p class="small" id="printMsg" hidden>Da qui la stampa è bloccata: apri il file conteggio-cassa.html in Chrome e premi Stampa da lì.</p>
       <textarea id="copyBox" hidden readonly></textarea>
     </div>
@@ -273,7 +274,7 @@ const blank=()=>({date:today(),coins:{},notes:{},extra:{},oCoins:{},oFixed:{},vi
 let st=blank();
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s)st=Object.assign(blank(),s)}catch(e){}
 {const mig=[["spese","Altro"],["ghiaccio","Ghiaccio"]];for(const[k,c]of mig){if(st.extra[k]){st.spese.push({cat:c,imp:st.extra[k]});delete st.extra[k]}}}
-const LOCALK=["view","w58","editedAt"];
+const LOCALK=["view","w58","editedAt","pdfPrint"];
 const dataOf=o=>{const c={};for(const k in o)if(!LOCALK.includes(k))c[k]=o[k];return c};
 let lastHash=JSON.stringify(dataOf(st));
 const save=()=>{const h=JSON.stringify(dataOf(st));if(h!==lastHash){st.editedAt=Date.now();lastHash=h}try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
@@ -398,7 +399,7 @@ $("copy").onclick=async()=>{
 };
 $("reset").onclick=()=>{$("confirm").hidden=false};
 $("no").onclick=()=>{$("confirm").hidden=true};
-$("yes").onclick=()=>{const v=st.view,w=st.w58;const cats=st.cats;st=blank();st.view=v;st.w58=w;st.cats=cats;save();renderSpese();
+$("yes").onclick=()=>{const v=st.view,w=st.w58,pp=st.pdfPrint;const cats=st.cats;st=blank();st.view=v;st.w58=w;st.pdfPrint=pp;st.cats=cats;save();renderSpese();
   document.querySelectorAll("input[data-k],input[data-x]").forEach(i=>i.value="");$("aPos").value="";$("aTav").value="";$("date").value=st.date;$("oDate").value=st.date;$("confirm").hidden=true;$("copyBox").hidden=true;renderAll()};
 $("date").value=st.date;$("oDate").value=st.date;
 function calcOpen(){
@@ -489,6 +490,8 @@ function route(){
 addEventListener("hashchange",route);
 $("w58").checked=!!st.w58;
 $("w58").onchange=()=>{st.w58=$("w58").checked;save()};
+$("pdfPrint").checked=!!st.pdfPrint;
+$("pdfPrint").onchange=()=>{st.pdfPrint=$("pdfPrint").checked;save()};
 $("print").onclick=()=>{
   const r=calc(),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"]];
   COINS.forEach(c=>{const n=+st.coins[c]||0;if(n)T.push(["r",`${lbl(c)} € × ${n}`,eur(c*n)])});
@@ -513,9 +516,9 @@ const enc=t=>{const o=[];for(const ch of String(t).replace(/\u2212/g,"-").replac
 const tw=(t,b,sz)=>enc(t).reduce((s,c)=>s+((b?W_HB:W_H)[c-32]||556),0)*sz/1000;
 const pstr=t=>"("+enc(t).map(c=>(c===40||c===41||c===92?"\\":"")+String.fromCharCode(c)).join("")+")";
 function makePdf(T){
-  const W=226.8,M=14,logoW=78,logoH=logoW*LOGO_H/LOGO_W,it=[];let y=M+logoH+4;
-  for(const[k,a,b]of T){if(k==="s"){it.push({k,y:y+4});y+=8;continue}const sz=k==="h"?13:k==="d"?9:k==="b"?12:10;y+=sz*1.3;it.push({k,a,b,sz,y})}
-  const H=y+14+M,f=v=>v.toFixed(2);
+  const W=st.w58?164.4:226.8,K=W/226.8,M=6,logoW=64*K,logoH=logoW*LOGO_H/LOGO_W,it=[];let y=M+logoH+3;
+  for(const[k,a,b]of T){if(k==="s"){it.push({k,y:y+3});y+=6;continue}const sz=(k==="h"?13:k==="d"?9:k==="b"?12:10)*K;y+=sz*1.22;it.push({k,a,b,sz,y})}
+  const H=y+10+M,f=v=>v.toFixed(2);
   let c=`q ${f(logoW)} 0 0 ${f(logoH)} ${f((W-logoW)/2)} ${f(H-M-logoH)} cm /Im1 Do Q\n`;
   const txt=(x,Y,b,sz,t)=>`BT ${b?"/F2":"/F1"} ${sz} Tf ${f(x)} ${f(Y)} Td ${pstr(t)} Tj ET\n`;
   for(const e of it){const Y=H-e.y;
@@ -555,6 +558,7 @@ $("oShare").onclick=()=>{shareNext=["Apertura turno "+st.date+".pdf","oPrintMsg"
 $("aShare").onclick=()=>{shareNext=["Fine aperitivo "+st.date+".pdf","aPrintMsg"];$("aPrint").onclick()};
 function doPrint(T,msgId){
   if(shareNext){const[n,m]=shareNext;shareNext=null;return sharePdf(T,n,m)}
+  if(st.pdfPrint){lastT=T;lastMsg=msgId;return sharePdf(T,"Scontrino "+st.date+".pdf",msgId)}
   $(msgId).textContent="Da qui la stampa è bloccata: apri il file conteggio-cassa.html in Chrome e premi Stampa da lì.";
   const t=$("ticket"),w58=!!st.w58,paper=w58?58:80,print=w58?48:72;
   const now=new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
@@ -624,7 +628,7 @@ const SNAPK="conteggioCassa.giorni";
 const snaps=()=>{try{return JSON.parse(localStorage.getItem(SNAPK))||{}}catch(e){return{}}};
 const setSnaps=S=>{const k=Object.keys(S).sort().reverse();const o={};k.slice(0,120).forEach(d=>o[d]=S[d]);try{localStorage.setItem(SNAPK,JSON.stringify(o))}catch(e){}};
 const fmtD=d=>new Date(d+"T12:00").toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"});
-function loadState(stato,savedAt){const keep={view:st.view,w58:st.w58};st=Object.assign(blank(),stato,keep,{editedAt:savedAt});lastHash=JSON.stringify(dataOf(st));try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function loadState(stato,savedAt){const keep={view:st.view,w58:st.w58,pdfPrint:st.pdfPrint};st=Object.assign(blank(),stato,keep,{editedAt:savedAt});lastHash=JSON.stringify(dataOf(st));try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
 function switchDate(d){
   if(d===st.date)return;
   const S=snaps(),cur=S[st.date];
