@@ -246,6 +246,7 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
         <button class="btn pri" id="print">Stampa scontrino</button>
         <button class="btn" id="share">Condividi PDF</button>
         <button class="btn" id="copy">Copia riepilogo</button>
+        <button class="btn" id="cReset">Azzera chiusura</button>
         <button class="btn" id="reset">Nuovo conteggio</button>
       </div>
       <div id="confirm" hidden style="margin-top:10px" class="small">Azzero tutti i numeri? <button class="btn" id="yes">Sì, azzera</button> <button class="btn" id="no">Annulla</button></div>
@@ -398,6 +399,8 @@ $("copy").onclick=async()=>{
   catch(_){const box=$("copyBox");box.hidden=false;box.value=txt;box.select()}
 };
 $("reset").onclick=()=>{$("confirm").hidden=false};
+$("cReset").onclick=()=>{st.coins={};st.notes={};st.extra={};st.spese=[];st.cSpeseExtra=[];save();
+  document.querySelectorAll('input[data-k="coins"],input[data-k="notes"],input[data-x]').forEach(i=>i.value="");$("copyBox").hidden=true;$("printMsg").hidden=true;renderSpese();renderAll()};
 $("no").onclick=()=>{$("confirm").hidden=true};
 $("yes").onclick=()=>{const v=st.view,w=st.w58,pp=st.pdfPrint;const cats=st.cats;st=blank();st.view=v;st.w58=w;st.pdfPrint=pp;st.cats=cats;save();renderSpese();
   document.querySelectorAll("input[data-k],input[data-x]").forEach(i=>i.value="");$("aPos").value="";$("aTav").value="";$("date").value=st.date;$("oDate").value=st.date;$("confirm").hidden=true;$("copyBox").hidden=true;renderAll()};
