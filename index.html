@@ -246,12 +246,12 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
         <button class="btn pri" id="print">Stampa scontrino</button>
         <button class="btn" id="share">Condividi PDF</button>
         <button class="btn" id="copy">Copia riepilogo</button>
+        <button class="btn" id="fPrint">Stampa fondo cassa</button>
+        <button class="btn" id="fShare">PDF fondo cassa</button>
         <button class="btn" id="cReset">Azzera chiusura</button>
         <button class="btn" id="reset">Nuovo conteggio</button>
       </div>
       <div id="confirm" hidden style="margin-top:10px" class="small">Azzero tutti i numeri? <button class="btn" id="yes">Sì, azzera</button> <button class="btn" id="no">Annulla</button></div>
-      <label class="check"><input type="checkbox" id="w58"> Carta da 58 mm (altrimenti 80 mm)</label>
-      <label class="check"><input type="checkbox" id="pdfPrint"> Stampa tramite PDF con RawBT (consuma meno carta)</label>
       <p class="small" id="printMsg" hidden>Da qui la stampa è bloccata: apri il file conteggio-cassa.html in Chrome e premi Stampa da lì.</p>
       <textarea id="copyBox" hidden readonly></textarea>
     </div>
@@ -265,13 +265,13 @@ body.locked>*:not(#lock):not(#ticket){display:none!important}
 {
 const COINS=[50,100,200];               // centesimi
 const NOTES=[500,1000,2000,5000,10000];  // centesimi
-const EXTRA=[["pos","Pos"],["tavoli","Tavoli aperti"]];
+const EXTRA=[["pos","Pos"],["tavoli","Tavoli aperti"],["fcont","Chiusura fiscale · contanti"],["felet","Chiusura fiscale · elettronici"]];
 const DEF_CATS=["Bancone","Cucina","Ghiaccio","Pulizie","Altro"];
 const KEY="conteggioCassa.v1";
 const $=id=>document.getElementById(id);
 const eur=c=>(c/100).toLocaleString("it-IT",{style:"currency",currency:"EUR"});
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const blank=()=>({date:today(),coins:{},notes:{},extra:{},oCoins:{},oFixed:{},view:"",spese:[],cats:DEF_CATS.slice(),aCoins:{},aNotes:{},aPos:"",aTav:"",aSpeseCassa:[],aSpeseExtra:[],cSpeseExtra:[]});
+const blank=()=>({date:today(),coins:{},notes:{},extra:{},oCoins:{},oFixed:{},view:"",spese:[],cats:DEF_CATS.slice(),aCoins:{},aNotes:{},aPos:"",aTav:"",aSpeseCassa:[],aSpeseExtra:[],cSpeseExtra:[],posExtra:[]});
 let st=blank();
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s)st=Object.assign(blank(),s)}catch(e){}
 {const mig=[["spese","Altro"],["ghiaccio","Ghiaccio"]];for(const[k,c]of mig){if(st.extra[k]){st.spese.push({cat:c,imp:st.extra[k]});delete st.extra[k]}}}
@@ -291,7 +291,7 @@ const noteRows=(k,p)=>NOTES.map(c=>`<div class="row"><div class="note" style="ba
 $("coins").innerHTML=coinRows("coins","tc");$("notes").innerHTML=noteRows("notes","tn");
 $("oCoinsBox").innerHTML=coinRows("oCoins","otc");
 $("oFixedBox").innerHTML=[500,1000,2000].map(c=>{const n={500:4,1000:4,2000:2}[c];return `<label class="row" style="cursor:pointer"><div class="note" style="background:${noteColor[c]}">${c/100} €</div><div style="font:600 18px Barlow,system-ui,sans-serif">× ${n} = ${eur(c*n)}</div><div class="tot" style="display:flex;gap:8px;align-items:center;justify-content:flex-end">Ci sono <input type="checkbox" id="fx${c}" data-fx="${c}" style="width:28px;height:28px"></div></label>`}).join("");
-$("extra").innerHTML=EXTRA.map(([k,l])=>`<div class="field"><label for="x${k}">${l}</label><input id="x${k}" data-x="${k}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${st.extra[k]??""}"></div>`).join("");
+$("extra").innerHTML=EXTRA.map(([k,l])=>(k==="tavoli"?`<div id="posExtra"></div><button class="btn" type="button" id="addPos" style="margin:4px 0 8px">+ Pos portatile</button>`:"")+`<div class="field"><label for="x${k}">${l}</label><input id="x${k}" data-x="${k}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${st.extra[k]??""}"></div>`).join("");
 
 const esc=t=>String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 let newCatFor=null;
@@ -318,10 +318,15 @@ function calc(){
   const {byCat,tot:speseTot}=sumSpese(st.spese);
   const ap=calcAp(),apNota=ap.contato?ap.tot:0,se=sumSpese(st.cSpeseExtra);
   const totCassa=contanti+speseTot;
-  const totale=totCassa+x("pos")+x("tavoli");
-  return {coinTot,avail,noteTot,counted,coinDiff,missingNotes,contanti,x,apNota,apOk:!!ap.contato,se,byCat,speseTot,totCassa,totale,netto:totale-se.tot};
+  const posTot=x("pos")+(st.posExtra||[]).reduce((s,v)=>s+toC(v),0);
+  const totale=totCassa+posTot+x("tavoli");
+  const fc=x("fcont"),fe=x("felet");
+  return {posTot,fc,fe,diffE:posTot-fe,coinTot,avail,noteTot,counted,coinDiff,missingNotes,contanti,x,apNota,apOk:!!ap.contato,se,byCat,speseTot,totCassa,totale,netto:totale-se.tot};
 }
 const fondoChips=()=>`<div class="chip"><span class="coin bi" style="width:32px;height:32px;font-size:11px">€</span><b>100 € monete</b></div>`+FIXED_D.map(c=>`<div class="chip"><span class="note" style="background:${noteColor[c]}">${c/100} €</span><b>× ${FIXED[c]}</b></div>`).join("");
+const coinTR=(o)=>COINS.map(c=>{const n=+o[c]||0;return n?`<tr><td>${lbl(c)} € × ${n}</td><td></td><td>${eur(c*n)}</td></tr>`:""}).join("");
+const coinTxt=(o)=>COINS.map(c=>{const n=+o[c]||0;return n?`${lbl(c)} € × ${n} = ${eur(c*n)}`:""}).filter(Boolean);
+const coinT=(o)=>COINS.map(c=>{const n=+o[c]||0;return n?["r",`${lbl(c)} € × ${n}`,eur(c*n)]:null}).filter(Boolean);
 function coinMsg(diff){
   if(diff>0)return `Monete: ${eur(diff)} in più rispetto a 100 € → cambiale con banconote del cassettino di riserva.`;
   if(diff<0)return `Monete: mancano ${eur(-diff)} per arrivare a 100 € → prendile dal cassettino di riserva in cambio di banconote.`;
@@ -346,28 +351,33 @@ function render(){
   if(r.noteTot&&mn.length)M.push("Per il fondo mancano "+mn.map(([c,n])=>`${n} da ${c/100} €`).join(", ")+" → cambiale dal cassettino di riserva.");
   msg.hidden=!M.length;msg.innerHTML=M.map(esc).join("<br>");
   const rows=[`<tr><th>Voce</th><th></th><th>Importo</th></tr>`,
-    `<tr><td>Monete</td><td></td><td>${eur(r.coinTot)}</td></tr>`,`<tr><td>Banconote</td><td></td><td>${eur(r.noteTot)}</td></tr>`,
+    coinTR(st.coins),`<tr class="sum"><td>Monete</td><td></td><td>${eur(r.coinTot)}</td></tr>`,`<tr><td>Banconote</td><td></td><td>${eur(r.noteTot)}</td></tr>`,
     `<tr class="sum"><td>Totale in cassa</td><td></td><td>${eur(r.counted)}</td></tr>`,
     `<tr><td>Fondo cassa (resta)</td><td></td><td class="warn">− ${eur(FONDO_TOT)}</td></tr>`,
     `<tr class="sum"><td>Contanti</td><td></td><td>${eur(r.contanti)}</td></tr>`];
   Object.entries(r.byCat).forEach(([c,v])=>rows.push(`<tr><td>Spese cassa · ${esc(c)}</td><td></td><td>+ ${eur(v)}</td></tr>`));
   $("tot_spese").textContent=r.speseTot?"+ "+eur(r.speseTot):"";$("tot_cSpeseExtra").textContent=r.se.tot?"− "+eur(r.se.tot):"";
   $("apAuto").textContent=r.apOk?eur(r.apNota):"non ancora contato";
-  rows.push(`<tr class="sum"><td>Totale cassa</td><td></td><td>${eur(r.totCassa)}</td></tr>`,`<tr><td>Pos</td><td></td><td>${eur(r.x("pos"))}</td></tr>`,`<tr><td>Tavoli aperti</td><td></td><td>${eur(r.x("tavoli"))}</td></tr>`,
+  rows.push(`<tr class="sum"><td>Totale cassa</td><td></td><td>${eur(r.totCassa)}</td></tr>`,`<tr><td>Pos</td><td></td><td>${eur(r.posTot)}</td></tr>`,`<tr><td>Tavoli aperti</td><td></td><td>${eur(r.x("tavoli"))}</td></tr>`,
     `<tr class="sum grand"><td>Totale</td><td></td><td>${eur(r.totale)}</td></tr>`);
   if(r.se.tot){Object.entries(r.se.byCat).forEach(([c,v])=>rows.push(`<tr><td>Spese extra cassa · ${esc(c)}</td><td></td><td class="warn">− ${eur(v)}</td></tr>`));rows.push(`<tr class="sum"><td>Netto dopo spese extra</td><td></td><td>${eur(r.netto)}</td></tr>`)}
   if(r.apOk)rows.push(`<tr><td>Aperitivo (nota)</td><td></td><td>${eur(r.apNota)}</td></tr>`);
+  const sg=v=>(v>0?"+ ":v<0?"− ":"")+eur(Math.abs(v)),cl=v=>v===0?"ok":"warn";
+  if(r.fc||r.fe)rows.push(`<tr><th colspan="3" style="padding-top:14px">Chiusura fiscale</th></tr>`,
+    `<tr><td>Fiscale contanti</td><td></td><td>${eur(r.fc)}</td></tr>`,
+    `<tr><td>Fiscale elettronici</td><td></td><td>${eur(r.fe)}</td></tr>`,`<tr class="sum"><td>Differenza elettronici<br><span class="small">Pos − fiscale</span></td><td></td><td class="${cl(r.diffE)}">${sg(r.diffE)}</td></tr>`);
   $("sumTable").innerHTML=rows.join("");
   $("foot").textContent=(r.apOk?"L'aperitivo è una nota e non entra nel totale. ":"")+"Contanti = tutto quello che c'è in cassa − fondo da 200 €. Totale cassa = contanti + spese pagate con la cassa. Totale = totale cassa + Pos + tavoli aperti.";
   return r;
 }
 
 function summaryText(r){
-  const L=[`Chiusura cassa ${$("dateLong").textContent}`,"",`Monete: ${eur(r.coinTot)}`,`Banconote: ${eur(r.noteTot)}`,`Totale in cassa: ${eur(r.counted)}`,`Fondo cassa: −${eur(FONDO_TOT)}`,`Contanti: ${eur(r.contanti)}`];
+  const L=[`Chiusura cassa ${$("dateLong").textContent}`,"",...coinTxt(st.coins),`Monete: ${eur(r.coinTot)}`,`Banconote: ${eur(r.noteTot)}`,`Totale in cassa: ${eur(r.counted)}`,`Fondo cassa: −${eur(FONDO_TOT)}`,`Contanti: ${eur(r.contanti)}`];
   Object.entries(r.byCat).forEach(([c,v])=>L.push(`Spese cassa ${c}: +${eur(v)}`));
-  L.push(`Totale cassa: ${eur(r.totCassa)}`,`Pos: ${eur(r.x("pos"))}`,`Tavoli aperti: ${eur(r.x("tavoli"))}`,`TOTALE: ${eur(r.totale)}`);
+  L.push(`Totale cassa: ${eur(r.totCassa)}`,`Pos: ${eur(r.posTot)}`,`Tavoli aperti: ${eur(r.x("tavoli"))}`,`TOTALE: ${eur(r.totale)}`);
   if(r.se.tot){Object.entries(r.se.byCat).forEach(([c,v])=>L.push(`Extra cassa ${c}: −${eur(v)}`));L.push(`Netto: ${eur(r.netto)}`)}
   if(r.apOk)L.push(`Aperitivo: ${eur(r.apNota)}`);
+  if(r.fc||r.fe){const sg=v=>(v>0?"+":v<0?"−":"")+eur(Math.abs(v));L.push("",`Fiscale contanti: ${eur(r.fc)}`,`Fiscale elettronici: ${eur(r.fe)} (differenza ${sg(r.diffE)})`)}
   return L.join("\n");
 }
 
@@ -399,11 +409,11 @@ $("copy").onclick=async()=>{
   catch(_){const box=$("copyBox");box.hidden=false;box.value=txt;box.select()}
 };
 $("reset").onclick=()=>{$("confirm").hidden=false};
-$("cReset").onclick=()=>{st.coins={};st.notes={};st.extra={};st.spese=[];st.cSpeseExtra=[];save();
+$("cReset").onclick=()=>{st.coins={};st.notes={};st.extra={};st.spese=[];st.cSpeseExtra=[];st.posExtra=[];save();renderPosExtra();
   document.querySelectorAll('input[data-k="coins"],input[data-k="notes"],input[data-x]').forEach(i=>i.value="");$("copyBox").hidden=true;$("printMsg").hidden=true;renderSpese();renderAll()};
 $("no").onclick=()=>{$("confirm").hidden=true};
 $("yes").onclick=()=>{const v=st.view,w=st.w58,pp=st.pdfPrint;const cats=st.cats;st=blank();st.view=v;st.w58=w;st.pdfPrint=pp;st.cats=cats;save();renderSpese();
-  document.querySelectorAll("input[data-k],input[data-x]").forEach(i=>i.value="");$("aPos").value="";$("aTav").value="";$("date").value=st.date;$("oDate").value=st.date;$("confirm").hidden=true;$("copyBox").hidden=true;renderAll()};
+  document.querySelectorAll("input[data-k],input[data-x]").forEach(i=>i.value="");$("aPos").value="";$("aTav").value="";renderPosExtra();$("date").value=st.date;$("oDate").value=st.date;$("confirm").hidden=true;$("copyBox").hidden=true;renderAll()};
 $("date").value=st.date;$("oDate").value=st.date;
 function calcOpen(){
   const coin=COINS.reduce((s,c)=>s+c*(+st.oCoins[c]||0),0);
@@ -461,7 +471,7 @@ function renderAp(){
   $("aSub").textContent=a.contato?`Contanti ${eur(a.contanti)} · Pos ${eur(a.pos)}`+(a.tav?` · Tavoli aperti ${eur(a.tav)}`:""):"";
   $("aMsg").textContent=!a.contato?"Conta monete e banconote nel cassetto a fine aperitivo, fondo compreso: l'app toglie il fondo contato all'apertura.":a.fromOpen?`Tolgo il fondo contato all'apertura: ${eur(a.base)}.`:`Apertura non contata: tolgo il fondo atteso di ${eur(a.base)}. Per un conto preciso compila prima la pagina Apertura.`;
   const sg=v=>(v<0?"−":"")+eur(Math.abs(v));
-  const rows=[`<tr><th>Voce</th><th></th><th>Importo</th></tr>`,`<tr><td>Contato in cassa</td><td></td><td>${eur(a.contato)}</td></tr>`,
+  const rows=[`<tr><th>Voce</th><th></th><th>Importo</th></tr>`,coinTR(st.aCoins),`<tr class="sum"><td>Monete</td><td></td><td>${eur(a.coin)}</td></tr>`,`<tr><td>Banconote</td><td></td><td>${eur(a.note)}</td></tr>`,`<tr class="sum"><td>Contato in cassa</td><td></td><td>${eur(a.contato)}</td></tr>`,
     `<tr><td>Fondo ${a.fromOpen?"contato all'apertura":"atteso"}</td><td></td><td class="warn">− ${eur(a.base)}</td></tr>`];
   Object.entries(a.sc.byCat).forEach(([c,v])=>rows.push(`<tr><td>Spese cassa · ${esc(c)}</td><td></td><td>+ ${eur(v)}</td></tr>`));
   rows.push(`<tr class="sum"><td>Incasso contanti</td><td></td><td>${sg(a.contanti)}</td></tr>`,`<tr><td>Pos</td><td></td><td>${eur(a.pos)}</td></tr>`,`<tr><td>Tavoli aperti</td><td></td><td>${eur(a.tav)}</td></tr>`,
@@ -491,10 +501,7 @@ function route(){
   window.scrollTo(0,0);
 }
 addEventListener("hashchange",route);
-$("w58").checked=!!st.w58;
-$("w58").onchange=()=>{st.w58=$("w58").checked;save()};
-$("pdfPrint").checked=!!st.pdfPrint;
-$("pdfPrint").onchange=()=>{st.pdfPrint=$("pdfPrint").checked;save()};
+st.w58=false;st.pdfPrint=false;
 $("print").onclick=()=>{
   const r=calc(),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"]];
   COINS.forEach(c=>{const n=+st.coins[c]||0;if(n)T.push(["r",`${lbl(c)} € × ${n}`,eur(c*n)])});
@@ -503,13 +510,32 @@ $("print").onclick=()=>{
   if(r.coinTot&&r.coinDiff)T.push(["r",r.coinDiff>0?"Monete da cambiare":"Monete da riserva",eur(Math.abs(r.coinDiff))]);
   Object.entries(r.byCat).forEach(([c,v])=>T.push(["r","Spese cassa "+c,"+"+eur(v)]));
   if(r.speseTot)T.push(["b","Totale cassa",eur(r.totCassa)]);
-  T.push(["r","Pos",eur(r.x("pos"))]);
+  T.push(["r","Pos"+((st.posExtra||[]).some(v=>toC(v))?" (con portatili)":""),eur(r.posTot)]);
   if(r.x("tavoli"))T.push(["r","Tavoli aperti",eur(r.x("tavoli"))]);
   T.push(["s"],["b","TOTALE",eur(r.totale)]);
   if(r.se.tot){Object.entries(r.se.byCat).forEach(([c,v])=>T.push(["r","Extra cassa "+c,"−"+eur(v)]));T.push(["b","Netto",eur(r.netto)])}
   if(r.apOk)T.push(["r","Aperitivo (nota)",eur(r.apNota)]);
+  if(r.fc||r.fe){const sg=v=>(v>0?"+":v<0?"−":"")+eur(Math.abs(v));T.push(["s"],["r","Fiscale contanti",eur(r.fc)],["r","Fiscale elettronici",eur(r.fe)],["b","Diff. elettronici",sg(r.diffE)])}
   doPrint(T,"printMsg");
 };
+function renderPosExtra(){
+  const L=st.posExtra||(st.posExtra=[]);
+  $("posExtra").innerHTML=L.map((v,i)=>`<div class="field" style="grid-template-columns:minmax(0,1fr) 130px 44px"><label for="pe${i}">Pos portatile ${i+1}</label><input id="pe${i}" data-pe="${i}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${esc(v??"")}"><button class="del" type="button" data-pedel="${i}" aria-label="Togli Pos portatile" style="height:44px;border-radius:10px;border:1px solid var(--line);background:none;color:var(--mute);font-size:20px">×</button></div>`).join("")+
+    (L.length?`<div class="field"><b>Pos totale</b><b class="tot" id="posTotLbl"></b></div>`:"");
+  const t=$("posTotLbl");if(t)t.textContent=eur(calc().posTot);
+}
+$("addPos").onclick=()=>{st.posExtra.push("");save();renderPosExtra();renderAll();const ins=document.querySelectorAll("input[data-pe]");ins[ins.length-1]?.focus()};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pedel]");if(!b)return;st.posExtra.splice(+b.dataset.pedel,1);save();renderPosExtra();renderAll()});
+document.addEventListener("input",e=>{const t=e.target;if(t.dataset.pe==null)return;st.posExtra[+t.dataset.pe]=t.value;save();renderAll();const l=$("posTotLbl");if(l)l.textContent=eur(calc().posTot)});
+$("fPrint").onclick=()=>{
+  const r=calc(),T=[["h","FONDO CASSA"],["d","Lasciato in chiusura · "+$("dateLong").textContent],["s"]];
+  if(r.coinTot){T.push(...coinT(st.coins),["r","Monete contate",eur(r.coinTot)]);if(r.coinDiff)T.push(["r",r.coinDiff>0?"Cambiate con la riserva":"Prese dalla riserva",(r.coinDiff>0?"−":"+")+eur(Math.abs(r.coinDiff))])}
+  T.push(["b","Monete nel fondo",eur(FONDO_COIN)],["s"]);
+  FIXED_D.forEach(c=>T.push(["r",`${c/100} € × ${FIXED[c]}`+(r.missingNotes[c]&&r.noteTot?` (${r.missingNotes[c]} da riserva)`:""),eur(c*FIXED[c])]));
+  T.push(["r","Banconote",eur(FIXED_TOT)],["s"],["b","FONDO CASSA",eur(FONDO_TOT)]);
+  doPrint(T,"printMsg");
+};
+$("fShare").onclick=()=>{shareNext=["Fondo cassa "+st.date+".pdf","printMsg"];$("fPrint").onclick()};
 const LOGO=document.querySelector(".lockbox img").src;
 const IN_CLAUDE=window.self!==window.top&&!/googleusercontent|google\.com/.test(location.hostname);
 let shareNext=null;
@@ -646,14 +672,14 @@ function refreshInputs(){
   document.querySelectorAll("input[data-x]").forEach(i=>i.value=st.extra[i.dataset.x]??"");
   $("date").value=$("oDate").value=st.date;
   $("aPos").value=st.aPos||"";$("aTav").value=st.aTav||"";
-  renderSpese();renderAll();
+  renderPosExtra();renderSpese();renderAll();
 }
 function toast(m){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.style.cssText="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1b1d22;color:#fff;padding:12px 18px;border-radius:12px;font:500 15px Barlow,system-ui,sans-serif;z-index:45;box-shadow:0 4px 16px #0005;max-width:90vw;text-align:center";document.body.appendChild(t)}t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,3500)}
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!/claude|googleusercontent/.test(location.hostname))navigator.serviceWorker.register("sw.js").catch(()=>{});
 $("lockNow").onclick=()=>showLock(getPin()?"unlock":"new");
 $("pinChange").onclick=()=>showLock(getPin()?"old":"new");
 showLock(getPin()?"unlock":"new");
-renderSpese();renderAll();route();
+renderPosExtra();renderSpese();renderAll();route();
 }
 </script>
 </body>
