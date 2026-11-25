@@ -502,17 +502,41 @@ function route(){
 }
 addEventListener("hashchange",route);
 st.w58=false;st.pdfPrint=false;
+// Divide le monete: quelle che formano i 100 € del fondo (tenendo le più piccole) e quelle in più
+function splitCoins(o){
+  const a={};COINS.forEach(c=>a[c]=Math.max(0,Math.floor(+o[c]||0)));
+  let best=null;
+  for(let f50=a[50];f50>=0;f50--)for(let f100=a[100];f100>=0;f100--){
+    const rest=FONDO_COIN-50*f50-100*f100;if(rest<0)continue;
+    const f200=Math.min(a[200],Math.floor(rest/200)),tot=50*f50+100*f100+200*f200;
+    if(!best||tot>best.tot)best={tot,f:{50:f50,100:f100,200:f200}};
+    if(tot===FONDO_COIN)break;
+  }
+  if(!best)best={tot:0,f:{50:0,100:0,200:0}};
+  const extra={};COINS.forEach(c=>extra[c]=a[c]-best.f[c]);
+  return {fondo:best.f,fondoTot:best.tot,extra,extraTot:COINS.reduce((s,c)=>s+c*extra[c],0)};
+}
 $("print").onclick=()=>{
-  const r=calc(),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"]];
-  COINS.forEach(c=>{const n=+st.coins[c]||0;if(n)T.push(["r",`${lbl(c)} € × ${n}`,eur(c*n)])});
-  NOTES.forEach(c=>{const n=r.avail[c];if(n)T.push(["r",`${c/100} € × ${n}`,eur(c*n)])});
-  T.push(["b","In cassa",eur(r.counted)],["r","Fondo cassa (resta)","−"+eur(FONDO_TOT)],["b","Contanti",eur(r.contanti)]);
-  if(r.coinTot&&r.coinDiff)T.push(["r",r.coinDiff>0?"Monete da cambiare":"Monete da riserva",eur(Math.abs(r.coinDiff))]);
+  const r=calc(),sc=splitCoins(st.coins),T=[["h","CHIUSURA CASSA"],["d",$("dateLong").textContent],["s"]];
+  T.push(["b","Monete fondo cassa",eur(sc.fondoTot)]);
+  COINS.forEach(c=>{if(sc.fondo[c])T.push(["r",`${lbl(c)} € × ${sc.fondo[c]}`,eur(c*sc.fondo[c])])});
+  if(sc.fondoTot<FONDO_COIN)T.push(["r","Mancano (dalla riserva)",eur(FONDO_COIN-sc.fondoTot)]);
+  T.push(["b","Banconote fondo cassa",eur(FIXED_TOT)]);
+  FIXED_D.forEach(c=>{const m=r.missingNotes[c]||0;T.push(["r",`${c/100} € × ${FIXED[c]}`+(m?` (${m} dalla riserva)`:""),eur(c*FIXED[c])])});
+  T.push(["b","TOTALE FONDO CASSA",eur(FONDO_TOT)],["s"]);
+  T.push(["b","CONTANTI",eur(r.contanti)]);
+  T.push(["b","Monete incasso",eur(sc.extraTot)]);
+  COINS.forEach(c=>{if(sc.extra[c])T.push(["r",`${lbl(c)} € × ${sc.extra[c]}`,eur(c*sc.extra[c])])});
+  const notesInc=NOTES.reduce((s,c)=>s+c*(r.avail[c]-(FIXED[c]||0)),0);
+  T.push(["b","Banconote incasso",eur(notesInc)]);
+  NOTES.forEach(c=>{const n=r.avail[c]-(FIXED[c]||0);if(n>0)T.push(["r",`${c/100} € × ${n}`,eur(c*n)]);else if(n<0)T.push(["r",`${c/100} €: ne mancano ${-n} nel fondo`,"−"+eur(-c*n)])});
+  if(sc.fondoTot<FONDO_COIN)T.push(["r","Monete mancanti nel fondo","−"+eur(FONDO_COIN-sc.fondoTot)]);
+  T.push(["s"]);
   Object.entries(r.byCat).forEach(([c,v])=>T.push(["r","Spese cassa "+c,"+"+eur(v)]));
   if(r.speseTot)T.push(["b","Totale cassa",eur(r.totCassa)]);
   T.push(["r","Pos"+((st.posExtra||[]).some(v=>toC(v))?" (con portatili)":""),eur(r.posTot)]);
   if(r.x("tavoli"))T.push(["r","Tavoli aperti",eur(r.x("tavoli"))]);
-  T.push(["s"],["b","TOTALE",eur(r.totale)]);
+  T.push(["b","TOTALE",eur(r.totale)]);
   if(r.se.tot){Object.entries(r.se.byCat).forEach(([c,v])=>T.push(["r","Extra cassa "+c,"−"+eur(v)]));T.push(["b","Netto",eur(r.netto)])}
   if(r.apOk)T.push(["r","Aperitivo (nota)",eur(r.apNota)]);
   if(r.fc||r.fe){const sg=v=>(v>0?"+":v<0?"−":"")+eur(Math.abs(v));T.push(["s"],["r","Fiscale contanti",eur(r.fc)],["r","Fiscale elettronici",eur(r.fe)],["b","Diff. elettronici",sg(r.diffE)])}
@@ -528,11 +552,14 @@ $("addPos").onclick=()=>{st.posExtra.push("");save();renderPosExtra();renderAll(
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pedel]");if(!b)return;st.posExtra.splice(+b.dataset.pedel,1);save();renderPosExtra();renderAll()});
 document.addEventListener("input",e=>{const t=e.target;if(t.dataset.pe==null)return;st.posExtra[+t.dataset.pe]=t.value;save();renderAll();const l=$("posTotLbl");if(l)l.textContent=eur(calc().posTot)});
 $("fPrint").onclick=()=>{
-  const r=calc(),T=[["h","FONDO CASSA"],["d","Lasciato in chiusura · "+$("dateLong").textContent],["s"]];
-  if(r.coinTot){T.push(...coinT(st.coins),["r","Monete contate",eur(r.coinTot)]);if(r.coinDiff)T.push(["r",r.coinDiff>0?"Cambiate con la riserva":"Prese dalla riserva",(r.coinDiff>0?"−":"+")+eur(Math.abs(r.coinDiff))])}
-  T.push(["b","Monete nel fondo",eur(FONDO_COIN)],["s"]);
-  FIXED_D.forEach(c=>T.push(["r",`${c/100} € × ${FIXED[c]}`+(r.missingNotes[c]&&r.noteTot?` (${r.missingNotes[c]} da riserva)`:""),eur(c*FIXED[c])]));
-  T.push(["r","Banconote",eur(FIXED_TOT)],["s"],["b","FONDO CASSA",eur(FONDO_TOT)]);
+  const r=calc(),sc=splitCoins(st.coins),T=[["h","FONDO CASSA"],["d","Lasciato in chiusura · "+$("dateLong").textContent],["s"]];
+  T.push(["b","Monete fondo cassa",eur(sc.fondoTot)]);
+  COINS.forEach(c=>{if(sc.fondo[c])T.push(["r",`${lbl(c)} € × ${sc.fondo[c]}`,eur(c*sc.fondo[c])])});
+  if(sc.fondoTot<FONDO_COIN)T.push(["r","Mancano (dalla riserva)",eur(FONDO_COIN-sc.fondoTot)]);
+  T.push(["b","Banconote fondo cassa",eur(FIXED_TOT)]);
+  FIXED_D.forEach(c=>{const m=r.missingNotes[c]&&r.noteTot?r.missingNotes[c]:0;T.push(["r",`${c/100} € × ${FIXED[c]}`+(m?` (${m} dalla riserva)`:""),eur(c*FIXED[c])])});
+  T.push(["s"],["b","TOTALE FONDO CASSA",eur(FONDO_TOT)]);
+  if(sc.extraTot){T.push(["s"],["b","Monete da cambiare",eur(sc.extraTot)]);COINS.forEach(c=>{if(sc.extra[c])T.push(["r",`${lbl(c)} € × ${sc.extra[c]}`,eur(c*sc.extra[c])])})}
   doPrint(T,"printMsg");
 };
 $("fShare").onclick=()=>{shareNext=["Fondo cassa "+st.date+".pdf","printMsg"];$("fPrint").onclick()};
